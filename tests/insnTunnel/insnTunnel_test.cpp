@@ -1,0 +1,42 @@
+#include <iss/insnTunnel.h>
+#include <memory>
+#include <mutex>
+#include <condition_variable>
+#include <thread>
+#include <iostream>
+
+archXplore::iss::insnTunnel<uint64_t> tunnel(1,100000000);
+
+void producer_thread(){
+    for(size_t i = 0 ; i < 100000000 ; i++){
+        tunnel.push(i);
+        // if(i % 1000 == 1)
+    }
+    tunnel.producer_do_exit();
+    // std::cout << "PRODUCER EXIT!" << std::endl;
+};
+
+void consumer_thread(){
+    for(size_t i = 0; ; i++){
+        bool exit;
+        uint64_t data;
+        tunnel.pop(exit,data);
+        if(exit){
+            break;
+        }
+        // if(i % 1000 == 1)
+        assert(data == i);
+    }
+};
+
+int main(int argc, char const *argv[])
+{
+    
+    std::thread pt(producer_thread);
+    std::thread ct(consumer_thread);
+
+    pt.join();
+    ct.join();
+
+    return 0;
+}
