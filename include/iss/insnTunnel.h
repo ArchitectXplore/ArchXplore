@@ -7,7 +7,6 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
-#include <iostream>
 
 namespace archXplore
 {
@@ -51,25 +50,25 @@ public:
             return m_producing;
         };
         void consumer_lock(){
-            std::unique_lock lock(m_lock);
+            std::unique_lock<std::mutex> lock(m_lock);
             while(is_producing()){
                 m_cond.wait(lock);
             }
         }
         void producer_lock(){
-            std::unique_lock lock(m_lock);
+            std::unique_lock<std::mutex> lock(m_lock);
             while(is_consuming()){
                 m_cond.wait(lock);
             }
         }
         void consumer_unlock(){
-            std::unique_lock lock(m_lock);
+            std::unique_lock<std::mutex> lock(m_lock);
             m_consuming = false;
             m_producing = true;
             m_cond.notify_one();
         };
         void producer_unlock(){
-            std::unique_lock lock(m_lock);
+            std::unique_lock<std::mutex> lock(m_lock);
             m_consuming = true;
             m_producing = false;
             m_cond.notify_one();
@@ -86,101 +85,61 @@ public:
         }
 
     };
-    class circularPtr_t
-    {
-    public :
-        circularPtr_t(const size_t depth) : m_size(depth), flag(false), ptr(0) {};
-        ~circularPtr_t(){};
-        circularPtr_t& operator++() {
-            if(ptr == m_size - 1){
-                flag = !flag;
-                ptr = 0;
-            } else {
-                ptr++;
-            }
-            return *this;
-        };
-        circularPtr_t& operator++(int) {
-            if(ptr == m_size - 1){
-                flag = !flag;
-                ptr = 0;
-            } else {
-                ptr++;
-            }
-            return *this;
-        };
-        static bool is_full(const circularPtr_t& left, const circularPtr_t& right){
-            return (left.flag != right.flag) && (left.ptr == right.ptr);
-        };
-        static bool is_empty(const circularPtr_t& left, const circularPtr_t& right){
-            return (left.flag == right.flag) && (left.ptr == right.ptr);
-        };
-    public:
-        bool flag;
-        size_t ptr;
-    private :
-        size_t m_size;
-    };
 // Constructors
 public:
     insnTunnel(
         size_t rankNumber = DEFAULT_TUNNEL_RANK_NUMBER, 
         size_t rankDepth = DEFAULT_TUNNEL_RANK_DEPTH) : 
         m_tunnel(rankNumber,tunnelRank(rankDepth)), m_rank_depth(rankDepth),
-        m_rank_head(rankNumber), m_rank_tail(rankNumber), m_producer_exited(false)
-    {};
+        m_producer_exited(false)
+    {
+        m_rank_head = m_tunnel.begin();
+        m_rank_tail = m_tunnel.begin();
+    };
     ~insnTunnel(){};
-// Methods
-private:
-    tunnelRank& current_push_rank(){
-        return m_tunnel[m_rank_tail.ptr];
-    };
-    tunnelRank& current_pop_rank(){
-        return m_tunnel[m_rank_head.ptr];
-    };
 public:
     void push(const InstructionType& insn) {
-        tunnelRank& curRank = current_push_rank();
         // fprintf(stderr,"PRODUCER TRY LOCK RANK %ld -> IS CONSUMING %d\n", m_rank_tail.ptr, curRank.is_consuming());
-        curRank.producer_lock();
+        m_rank_tail->producer_lock();
         // fprintf(stderr,"PRODUCER LOCK RANK %ld\n", m_rank_tail.ptr);
-        curRank.produce(insn);
+        m_rank_tail->produce(insn);
         // fprintf(stdout,"PUSH RANK %ld -> %ld\n", m_rank_tail.ptr, insn);
-        if(curRank.is_full()){
-            curRank.producer_unlock();
+        if(m_rank_tail->is_full()){
+            m_rank_tail->producer_unlock();
             // fprintf(stderr,"PRODUCER UNLOCK RANK %ld\n", m_rank_tail.ptr);
-            m_rank_tail++;
+            if(++m_rank_tail == m_tunnel.end()){
+                m_rank_tail = m_tunnel.begin();
+            }
         }
     };
     void pop(bool& exit, InstructionType& insn) {
-        tunnelRank& curRank = current_pop_rank();
+        tunnelRank& curRank = *m_rank_head;
         // fprintf(stderr,"CONSUMER TRY LOCK RANK %ld -> IS PRODUCINE %d\n", m_rank_head.ptr, curRank.is_producing());
-        curRank.consumer_lock();
-        insn = curRank.consume();
-        if(curRank.is_empty()){
-            curRank.consumer_unlock();
-            m_rank_head++;
+        m_rank_head->consumer_lock();
+        insn = m_rank_head->consume();
+        if(m_rank_head->is_empty()){
+            m_rank_head->consumer_unlock();
+            if(++m_rank_head == m_tunnel.end()){
+                m_rank_head = m_tunnel.begin();
+            }
             exit = consumer_exit();
         }
         // fprintf(stderr,"CONSUMER LOCK RANK %ld\n", m_rank_head.ptr);
     };
-    InstructionType pop() {
-        tunnelRank& curRank = current_pop_rank();
-        // fprintf(stderr,"CONSUMER TRY LOCK RANK %ld -> IS PRODUCINE %d\n", m_rank_head.ptr, curRank.is_producing());
-        curRank.consumer_lock();
-        InstructionType insn = curRank.consume();
-        if(curRank.is_empty()){
-            curRank.consumer_unlock();
-            m_rank_head++;
-        }
-        // fprintf(stderr,"CONSUMER LOCK RANK %ld\n", m_rank_head.ptr);
-        return insn;
-    };
     bool is_tunnel_empty(){
-        return circularPtr_t::is_empty(m_rank_head,m_rank_tail) && current_pop_rank().is_empty();
+        for(auto it = m_tunnel.begin(); it != m_tunnel.end(); it++){
+            if(!it->is_empty()){
+                return false;
+            }
+        }
+        return true;
     };
     bool is_tunnel_full(){
-        return circularPtr_t::is_full(m_rank_head,m_rank_tail) && current_push_rank().is_full();
+        for(auto it = m_tunnel.begin(); it != m_tunnel.end(); it++){
+            if(!it->is_full()){
+                return false;
+            }
+        }
     }
     bool consumer_exit(){
         if(m_producer_exited) {
@@ -191,7 +150,7 @@ public:
     };
     void producer_do_exit(){
         m_producer_exited = true;
-        current_push_rank().producer_unlock();
+        m_rank_tail->producer_unlock();
     };
     void lock_thread(){
         thread_lock.lock();
@@ -204,8 +163,8 @@ private:
     bool m_producer_exited;
     std::mutex thread_lock;
     size_t m_rank_depth;
-    circularPtr_t m_rank_head;
-    circularPtr_t m_rank_tail;
+    typename std::vector<tunnelRank>::iterator m_rank_head;
+    typename std::vector<tunnelRank>::iterator m_rank_tail;
     std::vector<tunnelRank> m_tunnel;
 };
 
