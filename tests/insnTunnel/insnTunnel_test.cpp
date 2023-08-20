@@ -5,10 +5,10 @@
 #include <thread>
 #include <iostream>
 
-archXplore::iss::insnTunnel<uint64_t> tunnel(1,100000000);
+archXplore::iss::insnTunnel<uint64_t> tunnel(2,500000);
 
 void producer_thread(){
-    for(size_t i = 0 ; i < 100000000 ; i++){
+    for(size_t i = 0 ; i < 1000000 ; i++){
         tunnel.push(i);
         // if(i % 1000 == 1)
     }
