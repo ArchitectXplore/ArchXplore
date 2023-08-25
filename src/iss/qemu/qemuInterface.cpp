@@ -1,14 +1,11 @@
-#include <iss/qemu/qemuEmulator.h>
+#include <iss/qemu/qemuInterface.h>
 
-namespace ArchXplore
-{
-namespace iss
-{
-namespace qemu
-{
+namespace archXplore{
+namespace iss{
+namespace qemu{
 
-extern std::shared_ptr<qemuInterface> g_qemuInterface_instance;
-extern std::mutex g_qemuInterface_lock;
+std::shared_ptr<qemuInterface> g_qemuInterface_instance = nullptr;
+std::mutex g_qemuInterface_lock;
 
 
 } // namespace qemu

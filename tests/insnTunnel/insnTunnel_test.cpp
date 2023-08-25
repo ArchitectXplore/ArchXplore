@@ -5,7 +5,7 @@
 #include <thread>
 #include <iostream>
 
-archXplore::iss::insnTunnel<uint64_t> tunnel(2,500000);
+archXplore::iss::insnTunnel<uint64_t> tunnel(1,1000000);
 
 void producer_thread(){
     for(size_t i = 0 ; i < 1000000 ; i++){

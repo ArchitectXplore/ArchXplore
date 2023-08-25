@@ -1,10 +1,12 @@
 #pragma once
-
-#include <iss/qemu/qemuEmulator.h>
+extern "C"{
+    #include <iss/qemu/qemuEmulator.h>
+} 
 #include <iss/insnTunnel.h>
 #include <isa/traceInsn.h>
 #include <thread>
 #include <mutex>
+#include <iostream>
 
 namespace archXplore {
 namespace iss {
@@ -23,8 +25,8 @@ struct qemuArgument_t {
 
 class qemuInterface
 {
-private:
-    using insnPtr = isa::traceInsn::PtrType;
+public:
+    typedef std::shared_ptr<isa::traceInsn> insnPtr;
 
 public:
     // Delected function
@@ -32,12 +34,15 @@ public:
     qemuInterface& operator=(const qemuInterface&) = delete;
 
 public:
-    ~qemuInterface(){};
+    ~qemuInterface(){
+        m_exit_lock.unlock();
+    };
 
     void qemuExitRequest() {
         for(auto it = m_insn_queue.begin(); it != m_insn_queue.end(); it++){
             it->producer_do_exit();
         }
+        m_exit_lock.lock();
     };
 
     insnTunnel<insnPtr>& getInsnQueueByIndex(const uint64_t& hart_index){
@@ -46,50 +51,55 @@ public:
     };
 
     void resize_insn_tunnel(const size_t& coreNumber){
-        if(coreNumber > m_coreNumber) {
+        if(coreNumber > m_insn_queue.size()) {
             m_insn_queue_lock.lock();
-            if(coreNumber > m_coreNumber) {
-                while(coreNumber > m_coreNumber){
-                    m_insn_queue.emplace_back(insnTunnel(2,m_simInterval / 2));
+            if(coreNumber > m_insn_queue.size()) {
+                while(coreNumber > m_insn_queue.size()){
+                    m_insn_queue.emplace_back(insnTunnel<insnPtr>(1,m_simInterval));
                 }
-                m_coreNumber = coreNumber;
             }
             m_insn_queue_lock.unlock();
         }
     };
 
-    static std::shared_ptr<qemuInterface>& getInstance(const size_t coreNumber, const size_t simInterval){
+    void set_sim_interval(const size_t& simInterval){
+        m_simInterval = simInterval;
+    };
+
+    static std::shared_ptr<qemuInterface>& getInstance(){
         if(g_qemuInterface_instance == nullptr){
             g_qemuInterface_lock.lock();
             if(g_qemuInterface_instance == nullptr) {
-                g_qemuInterface_instance = std::shared_ptr<qemuInterface>(new qemuInterface(coreNumber, simInterval));
+                g_qemuInterface_instance = std::shared_ptr<qemuInterface>(new qemuInterface);
             }
             g_qemuInterface_lock.unlock();
         }
         return g_qemuInterface_instance;
     };
 
-    std::thread& createQemuThread(const bool& user_mode, const qemuArgument_t& qemu_args) {
+    std::thread& createQemuThread(const qemuArgument_t& qemu_args) {
         m_exit_lock.lock();
-        if(user_mode){
-            static std::thread t(qemu_args.argc, qemu_args.argv, qemu_args.envp);
-            t.detach();
-            return t;
-        } else {
-            static std::thread t(qemu_args.argc, qemu_args.argv);
-            t.detach();
-            return t;
-        }
+        #ifndef CONFIG_USER_ONLY
+        static std::thread t(qemuSystemEmulator, qemu_args.argc, qemu_args.argv);
+        #else
+        static std::thread t(qemuUserEmulator, qemu_args.argc, qemu_args.argv, qemu_args.envp);
+        #endif
+        t.detach();
+        return t;
     };
 
 private:
+    qemuInterface() 
+        : m_simInterval(10000)
+    {
+        resize_insn_tunnel(1);
+    };
     qemuInterface(const size_t& coreNumber, const size_t& simInterval) 
-        :  m_coreNumber(coreNumber), m_simInterval(simInterval)
+        : m_simInterval(simInterval)
     {
         resize_insn_tunnel(coreNumber);
     };
 private:
-    size_t m_coreNumber;
     size_t m_simInterval;
 
     std::vector<insnTunnel<insnPtr>> m_insn_queue;

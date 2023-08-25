@@ -75,7 +75,7 @@ public:
         };
         void produce(const InstructionType& insn){
             assert(m_rank.size() < m_rank_depth);
-            m_rank.push_back(insn);
+            m_rank.emplace_back(insn);
         };
         InstructionType consume(){
             assert(m_rank.size() > 0);
@@ -89,10 +89,16 @@ public:
 public:
     insnTunnel(
         size_t rankNumber = DEFAULT_TUNNEL_RANK_NUMBER, 
-        size_t rankDepth = DEFAULT_TUNNEL_RANK_DEPTH) : 
+        size_t rankDepth = DEFAULT_TUNNEL_RANK_DEPTH
+    ) : 
         m_tunnel(rankNumber,tunnelRank(rankDepth)), m_rank_depth(rankDepth),
         m_producer_exited(false)
     {
+        m_rank_head = m_tunnel.begin();
+        m_rank_tail = m_tunnel.begin();
+    };
+    insnTunnel(const insnTunnel<InstructionType>& that) 
+    : m_producer_exited(false), m_rank_depth(that.m_rank_depth), m_tunnel(that.m_tunnel){
         m_rank_head = m_tunnel.begin();
         m_rank_tail = m_tunnel.begin();
     };
