@@ -1,0 +1,6 @@
+[submodule "ext/mavis"]
+	path = ext/mavis
+	url = https://github.com/ArchitectXplore/mavis.git
+[submodule "ext/qemu"]
+	path = ext/qemu
+	url = https://github.com/ArchitectXplore/qemu.git
