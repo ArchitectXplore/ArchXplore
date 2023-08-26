@@ -19,10 +19,9 @@ int main(int argc, char **argv, char **envp)
 
     while(!exit_flag){
         insn_queue_zero.pop(exit_flag,insn);
-        std::cout << " uid " << std::dec << counter++ << " -> " <<
-        " pc " << std::hex << insn->pc <<
-        " opcode " << std::hex << insn->opcode << std::endl;
+        // std::cout << " uid " << std::dec << counter++ << " -> " <<
+        // " pc " << std::hex << insn->pc <<
+        // " opcode " << std::hex << insn->opcode << std::endl;
     }
-
     return 0;
 }

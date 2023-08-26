@@ -1,0 +1,5 @@
+*.so
+*.o
+*.log
+hello
+qemuInterface_test

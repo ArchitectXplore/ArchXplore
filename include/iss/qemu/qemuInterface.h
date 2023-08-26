@@ -34,7 +34,9 @@ public:
     qemuInterface& operator=(const qemuInterface&) = delete;
 
 public:
-    ~qemuInterface(){
+    ~qemuInterface(){mainExit();};
+
+    void mainExit(){
         m_exit_lock.unlock();
     };
 
