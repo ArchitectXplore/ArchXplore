@@ -37,14 +37,19 @@ public:
     ~qemuInterface(){mainExit();};
 
     void mainExit(){
-        m_exit_lock.unlock();
+        std::unique_lock<std::mutex> lock(m_exit_lock);
+        exit_ready = true;
+        m_exit_cond.notify_one();
     };
 
     void qemuExitRequest() {
         for(auto it = m_insn_queue.begin(); it != m_insn_queue.end(); it++){
             it->producer_do_exit();
         }
-        m_exit_lock.lock();
+        std::unique_lock<std::mutex> lock(m_exit_lock);
+        while(!exit_ready){
+            m_exit_cond.wait(lock);
+        }
     };
 
     insnTunnel<insnPtr>& getInsnQueueByIndex(const uint64_t& hart_index){
@@ -80,7 +85,6 @@ public:
     };
 
     std::thread& createQemuThread(const qemuArgument_t& qemu_args) {
-        m_exit_lock.lock();
         #ifndef CONFIG_USER_ONLY
         static std::thread t(qemuSystemEmulator, qemu_args.argc, qemu_args.argv);
         #else
@@ -92,12 +96,12 @@ public:
 
 private:
     qemuInterface() 
-        : m_simInterval(10000)
+        : m_simInterval(10000), exit_ready(false)
     {
         resize_insn_tunnel(1);
     };
     qemuInterface(const size_t& coreNumber, const size_t& simInterval) 
-        : m_simInterval(simInterval)
+        : m_simInterval(simInterval), exit_ready(false)
     {
         resize_insn_tunnel(coreNumber);
     };
@@ -107,7 +111,9 @@ private:
     std::vector<insnTunnel<insnPtr>> m_insn_queue;
     std::mutex m_insn_queue_lock;
 
+    bool exit_ready;
     std::mutex m_exit_lock;
+    std::condition_variable m_exit_cond;
 };
 
 } // namespace qemu

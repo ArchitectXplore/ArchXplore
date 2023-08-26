@@ -15,6 +15,8 @@ static bool system_emulation;
 
 std::shared_ptr<qemuInterface> interface_instance;
 
+static std::vector<qemuInterface::insnPtr> translated_insns;
+
 static std::vector<qemuInterface::insnPtr> last_exec_insn;
 
 static std::mutex last_exec_insn_lock;
@@ -32,9 +34,9 @@ static void resize_last_exec_insn(const size_t& coreNumber) {
 static void send_insn_by_hart(const size_t& cpu_index){
     auto& insn_queue = interface_instance->getInsnQueueByIndex(cpu_index);
     auto& insn = last_exec_insn[cpu_index];
-    if(insn){
+    if(insn != nullptr){
         insn_queue.push(insn);
-        insn.reset();
+        insn = nullptr;
     }
 };
 
@@ -69,7 +71,7 @@ static void vcpu_tb_trans(qemu_plugin_id_t id, struct qemu_plugin_tb *tb)
 
     for (size_t i = 0; i < qemu_plugin_tb_n_insns(tb); i++) {
 
-        traceInsn* trace_insn = new traceInsn(); 
+        qemuInterface::insnPtr& trace_insn = translated_insns.emplace_back(std::make_shared<traceInsn>());
 
         insn = qemu_plugin_tb_get_insn(tb,i);
 
@@ -99,7 +101,7 @@ static void vcpu_tb_trans(qemu_plugin_id_t id, struct qemu_plugin_tb *tb)
 
         /* Register callback on instruction */
         qemu_plugin_register_vcpu_insn_exec_cb(insn, vcpu_insn_exec,
-                                                QEMU_PLUGIN_CB_NO_REGS, (void*) trace_insn);
+                                                QEMU_PLUGIN_CB_NO_REGS, (void*) trace_insn.get());
 
     }
 
