@@ -59,7 +59,7 @@ static void vcpu_insn_exec(unsigned int cpu_index, void *udata)
 
     send_insn_by_hart(cpu_index);
 
-    last_insn_ptr.reset((traceInsn*) udata);
+    last_insn_ptr = std::make_shared<traceInsn>(*(traceInsn*) udata);
 }
 
 static void vcpu_tb_trans(qemu_plugin_id_t id, struct qemu_plugin_tb *tb)
