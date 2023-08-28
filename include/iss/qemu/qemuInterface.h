@@ -6,7 +6,7 @@ extern "C"{
 #include <isa/traceInsn.h>
 #include <thread>
 #include <mutex>
-#include <iostream>
+#include <cmath>
 
 namespace archXplore {
 namespace iss {
@@ -62,15 +62,16 @@ public:
             m_insn_queue_lock.lock();
             if(coreNumber > m_insn_queue.size()) {
                 while(coreNumber > m_insn_queue.size()){
-                    m_insn_queue.emplace_back(insnTunnel<insnPtr>(1,m_simInterval));
+                    m_insn_queue.emplace_back(insnTunnel<insnPtr>(m_tunnleNumber,m_simInterval));
                 }
             }
             m_insn_queue_lock.unlock();
         }
     };
 
-    void set_sim_interval(const size_t& simInterval){
-        m_simInterval = simInterval;
+    void set_sim_interval(const size_t& simInterval, const size_t& tunnelNumber = 1){
+        m_simInterval = ((size_t)std::ceil(((double)simInterval/8.0))) * 8; // Align to 64 bytes
+        m_tunnleNumber = tunnelNumber;
     };
 
     static std::shared_ptr<qemuInterface>& getInstance(){
@@ -96,17 +97,11 @@ public:
 
 private:
     qemuInterface() 
-        : m_simInterval(10000), exit_ready(false)
-    {
-        resize_insn_tunnel(1);
-    };
-    qemuInterface(const size_t& coreNumber, const size_t& simInterval) 
-        : m_simInterval(simInterval), exit_ready(false)
-    {
-        resize_insn_tunnel(coreNumber);
-    };
+        : m_simInterval(16384), m_tunnleNumber(1), exit_ready(false)
+    {};
 private:
     size_t m_simInterval;
+    size_t m_tunnleNumber;
 
     std::vector<insnTunnel<insnPtr>> m_insn_queue;
     std::mutex m_insn_queue_lock;

@@ -14,7 +14,6 @@ int main(int argc, char **argv, char **envp)
     double elapsed_second;
 
     qemu_if = qemuInterface::getInstance();
-    qemu_if->set_sim_interval(1000);
     auto& qemu_thread = qemu_if->createQemuThread({argc,argv,envp});
     auto& insn_queue_zero = qemu_if->getInsnQueueByIndex(0);
  
