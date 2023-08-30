@@ -158,16 +158,9 @@ public:
         m_producer_exited = true;
         m_rank_tail->producer_unlock();
     };
-    void lock_thread(){
-        thread_lock.lock();
-    };
-    void unlock_thread(){
-        thread_lock.unlock();
-    };
 
 private:
     bool m_producer_exited;
-    std::mutex thread_lock;
     size_t m_rank_depth;
     typename std::vector<tunnelRank>::iterator m_rank_head;
     typename std::vector<tunnelRank>::iterator m_rank_tail;

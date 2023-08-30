@@ -4,3 +4,6 @@
 [submodule "ext/qemu"]
 	path = ext/qemu
 	url = https://github.com/ArchitectXplore/qemu.git
+[submodule "ext/gem5"]
+	path = ext/gem5
+	url = https://github.com/ArchitectXplore/gem5.git

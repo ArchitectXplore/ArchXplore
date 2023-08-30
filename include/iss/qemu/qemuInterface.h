@@ -1,6 +1,7 @@
 #pragma once
 extern "C"{
     #include <iss/qemu/qemuEmulator.h>
+    #include <iss/qemu/qemu-plugin.h>
 } 
 #include <iss/insnTunnel.h>
 #include <isa/traceInsn.h>
@@ -34,11 +35,11 @@ public:
     qemuInterface& operator=(const qemuInterface&) = delete;
 
 public:
-    ~qemuInterface(){mainExit();};
+    ~qemuInterface(){};
 
-    void mainExit(){
+    void exit(){
         std::unique_lock<std::mutex> lock(m_exit_lock);
-        exit_ready = true;
+        m_exit_ready = true;
         m_exit_cond.notify_one();
     };
 
@@ -47,17 +48,32 @@ public:
             it->producer_do_exit();
         }
         std::unique_lock<std::mutex> lock(m_exit_lock);
-        while(!exit_ready){
+        m_exit_pending = true;
+        while(!m_exit_ready){
             m_exit_cond.wait(lock);
         }
     };
 
+    void qemuInitDone(){
+        std::unique_lock<std::mutex> lock(m_init_lock);
+        init_done = true;
+        m_init_cond.notify_one();
+    };
+
+    void waitQemuInit(){
+        std::unique_lock<std::mutex> lock(m_init_lock);
+        while(!init_done){
+            m_init_cond.wait(lock);
+        }
+        blockQemuThread();
+    };
+
     insnTunnel<insnPtr>& getInsnQueueByIndex(const uint64_t& hart_index){
-        resize_insn_tunnel(hart_index+1);
+        resizeInsnTunnel(hart_index+1);
         return m_insn_queue[hart_index];
     };
 
-    void resize_insn_tunnel(const size_t& coreNumber){
+    void resizeInsnTunnel(const size_t& coreNumber){
         if(coreNumber > m_insn_queue.size()) {
             m_insn_queue_lock.lock();
             if(coreNumber > m_insn_queue.size()) {
@@ -69,7 +85,7 @@ public:
         }
     };
 
-    void set_sim_interval(const size_t& simInterval, const size_t& tunnelNumber = 1){
+    void setSimInterval(const size_t& simInterval, const size_t& tunnelNumber = 1){
         m_simInterval = ((size_t)std::ceil(((double)simInterval/8.0))) * 8; // Align to 64 bytes
         m_tunnleNumber = tunnelNumber;
     };
@@ -91,14 +107,30 @@ public:
         #else
         static std::thread t(qemuUserEmulator, qemu_args.argc, qemu_args.argv, qemu_args.envp);
         #endif
+        waitQemuInit();
         t.detach();
         return t;
     };
 
+    void blockQemuThread(){
+        std::unique_lock<std::mutex> lock(m_exit_lock);
+        if(!m_exit_pending){
+            plugin_qemu_mutex_lock_iothread();
+        }
+    };
+
+    void unblockQemuThread(){
+        std::unique_lock<std::mutex> lock(m_exit_lock);
+        if(!m_exit_pending){
+            plugin_qemu_mutex_unlock_iothread();
+        }
+    };
+
 private:
     qemuInterface() 
-        : m_simInterval(16384), m_tunnleNumber(1), exit_ready(false)
-    {};
+        : m_simInterval(16384), m_tunnleNumber(1), m_exit_ready(false), init_done(false), m_exit_pending(false)
+    {
+    };
 private:
     size_t m_simInterval;
     size_t m_tunnleNumber;
@@ -106,7 +138,12 @@ private:
     std::vector<insnTunnel<insnPtr>> m_insn_queue;
     std::mutex m_insn_queue_lock;
 
-    bool exit_ready;
+    bool init_done;
+    std::mutex m_init_lock;
+    std::condition_variable m_init_cond;
+
+    bool m_exit_pending;
+    bool m_exit_ready;
     std::mutex m_exit_lock;
     std::condition_variable m_exit_cond;
 };

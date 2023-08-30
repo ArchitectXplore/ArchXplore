@@ -5,15 +5,13 @@
 using namespace archXplore::isa;
 using namespace archXplore::iss::qemu;
 
-std::shared_ptr<qemuInterface> qemu_if;
-
 int main(int argc, char **argv, char **envp)
 {
 
     time_t start_time, end_time;
     double elapsed_second;
 
-    qemu_if = qemuInterface::getInstance();
+    std::shared_ptr<qemuInterface> qemu_if = qemuInterface::getInstance();
     auto& qemu_thread = qemu_if->createQemuThread({argc,argv,envp});
     auto& insn_queue_zero = qemu_if->getInsnQueueByIndex(0);
  
@@ -22,13 +20,15 @@ int main(int argc, char **argv, char **envp)
     qemuInterface::insnPtr insn;
 
     start_time = clock();
-
+    qemu_if->unblockQemuThread();
     while(!exit_flag){
-        insn_queue_zero.pop(exit_flag,insn);
+        // qemu_if->unblockQemuThread();
+        insn_queue_zero.pop(exit_flag,insn); 
         // std::cerr << " uid " << std::dec << counter++ << " -> " <<
         // " pc " << std::hex << insn->pc <<
         // " opcode " << std::hex << insn->opcode << std::endl;
         counter++;
+        // qemu_if->blockQemuThread();
     }
 
     end_time = clock();
@@ -39,6 +39,8 @@ int main(int argc, char **argv, char **envp)
         << "Total instruciton count : " << counter << std::endl
         << "Million instructions per second(MIPS) : " << (((double)counter / 1000000.0) / elapsed_second)
         << std::endl;
+
+    qemu_if->exit();
 
     return 0;
 }

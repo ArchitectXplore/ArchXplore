@@ -1,7 +1,3 @@
-extern "C" {
-#include <iss/qemu/qemu-plugin.h>
-}
-
 #include <isa/traceInsn.h>
 #include <iss/qemu/qemuInterface.h>
 
@@ -13,7 +9,9 @@ using namespace archXplore::isa;
 
 static bool system_emulation;
 
-std::shared_ptr<qemuInterface> interface_instance;
+static bool qemu_init_done;
+
+static std::shared_ptr<qemuInterface> interface_instance;
 
 static std::vector<qemuInterface::insnPtr> translated_insns;
 
@@ -25,8 +23,12 @@ static void resize_last_exec_insn(const size_t& coreNumber) {
     if(coreNumber > last_exec_insn.size()){
         std::lock_guard<std::mutex> lock(last_exec_insn_lock);
         if(coreNumber > last_exec_insn.size()){
+            if(!__glibc_likely(qemu_init_done)){
+                qemu_init_done = true;
+                interface_instance->qemuInitDone();
+            }
             last_exec_insn.resize(coreNumber);
-            interface_instance->resize_insn_tunnel(coreNumber);
+            interface_instance->resizeInsnTunnel(coreNumber);
         }
     }
 };
@@ -110,6 +112,7 @@ static void vcpu_tb_trans(qemu_plugin_id_t id, struct qemu_plugin_tb *tb)
 
 static void plugin_init(void)
 {
+    qemu_init_done = false;
     interface_instance = qemuInterface::getInstance();
 }
 

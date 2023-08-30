@@ -4,7 +4,7 @@ namespace archXplore{
 namespace iss{
 namespace qemu{
 
-std::shared_ptr<qemuInterface> g_qemuInterface_instance = nullptr;
+std::shared_ptr<qemuInterface> g_qemuInterface_instance = qemuInterface::getInstance();
 std::mutex g_qemuInterface_lock;
 
 
