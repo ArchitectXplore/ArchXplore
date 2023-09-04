@@ -7,17 +7,21 @@
 using namespace archXplore::iss::qemu;
 using namespace archXplore::isa;
 
-static bool system_emulation;
+qemu_plugin_id_t plugin_id;
 
-static bool qemu_init_done;
+bool system_emulation;
 
-static std::shared_ptr<qemuInterface> interface_instance;
+bool qemu_init_done;
 
-static std::vector<qemuInterface::insnPtr> translated_insns;
+bool qemu_exit_done;
 
-static std::vector<qemuInterface::insnPtr> last_exec_insn;
+std::mutex qemu_exit_lock;
 
-static std::mutex last_exec_insn_lock;
+std::shared_ptr<qemuInterface> interface_instance;
+
+std::vector<traceInsn*> last_exec_insn;
+
+std::mutex last_exec_insn_lock;
 
 static void resize_last_exec_insn(const size_t& coreNumber) {
     if(coreNumber > last_exec_insn.size()){
@@ -36,9 +40,8 @@ static void resize_last_exec_insn(const size_t& coreNumber) {
 static void send_insn_by_hart(const size_t& cpu_index){
     auto& insn_queue = interface_instance->getInsnQueueByIndex(cpu_index);
     auto& insn = last_exec_insn[cpu_index];
-    if(insn != nullptr){
-        insn_queue.push(insn);
-        insn = nullptr;
+    if(__glibc_likely(insn != nullptr)){
+        insn_queue.push(*insn);
     }
 };
 
@@ -63,7 +66,7 @@ static void vcpu_insn_exec(unsigned int cpu_index, void *udata)
 
     send_insn_by_hart(cpu_index);
 
-    last_insn_ptr = std::make_shared<traceInsn>(*(traceInsn*) udata);
+    last_insn_ptr = (traceInsn*) udata;
 }
 
 static void vcpu_tb_trans(qemu_plugin_id_t id, struct qemu_plugin_tb *tb)
@@ -73,19 +76,14 @@ static void vcpu_tb_trans(qemu_plugin_id_t id, struct qemu_plugin_tb *tb)
 
     for (size_t i = 0; i < qemu_plugin_tb_n_insns(tb); i++) {
 
-        qemuInterface::insnPtr& trace_insn = translated_insns.emplace_back(std::make_shared<traceInsn>());
+        traceInsn* trace_insn = new traceInsn;
 
         insn = qemu_plugin_tb_get_insn(tb,i);
 
-        trace_insn->pc = qemu_plugin_insn_vaddr(insn);
+        trace_insn->pc = (uint64_t)qemu_plugin_insn_vaddr(insn);
         
         if(system_emulation) {
-            qemu_plugin_hwaddr* pc_hwaddr = (qemu_plugin_hwaddr*) qemu_plugin_insn_haddr(insn);
-            if(qemu_plugin_hwaddr_is_io(pc_hwaddr)){
-                trace_insn->physical_pc = trace_insn->pc;
-            } else {
-                trace_insn->physical_pc = qemu_plugin_hwaddr_phys_addr(pc_hwaddr);
-            }
+            trace_insn->physical_pc = (uint64_t)qemu_plugin_insn_haddr(insn);;
         } else {
             trace_insn->physical_pc = trace_insn->pc;
         }
@@ -103,26 +101,37 @@ static void vcpu_tb_trans(qemu_plugin_id_t id, struct qemu_plugin_tb *tb)
 
         /* Register callback on instruction */
         qemu_plugin_register_vcpu_insn_exec_cb(insn, vcpu_insn_exec,
-                                                QEMU_PLUGIN_CB_NO_REGS, (void*) trace_insn.get());
+                                                QEMU_PLUGIN_CB_NO_REGS, (void*) trace_insn);
 
     }
 
 }
 
+static void plugin_user_exit(void){
+    if(!qemu_exit_done){
+        qemu_exit_lock.lock();
+        if(!qemu_exit_done){
+            for(size_t i = 0 ; i < last_exec_insn.size(); i++){
+                send_insn_by_hart(i);
+            }
+            interface_instance->qemuExitRequest();
+        }
+        qemu_exit_done = true;
+        qemu_exit_lock.unlock();
+    }
+}
 
 static void plugin_init(void)
 {
+    atexit(plugin_user_exit);
     qemu_init_done = false;
+    qemu_exit_done = false;
     interface_instance = qemuInterface::getInstance();
 }
 
-
 static void plugin_exit(qemu_plugin_id_t id, void *p)
 {
-    for(size_t i = 0 ; i < last_exec_insn.size(); i++){
-        send_insn_by_hart(i);
-    }
-    interface_instance->qemuExitRequest();
+    plugin_user_exit();
 }
 
 extern "C" {
@@ -135,6 +144,7 @@ int qemu_plugin_install(qemu_plugin_id_t id, const qemu_info_t *info,
 {
 
     system_emulation = info->system_emulation; 
+    plugin_id = id;
 
     plugin_init();
     qemu_plugin_register_vcpu_tb_trans_cb(id, vcpu_tb_trans);

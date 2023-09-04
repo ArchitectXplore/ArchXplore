@@ -17,18 +17,16 @@ int main(int argc, char **argv, char **envp)
  
     bool exit_flag = false;
     uint64_t counter = 0;
-    qemuInterface::insnPtr insn;
+    traceInsn insn;
 
     start_time = clock();
     qemu_if->unblockQemuThread();
     while(!exit_flag){
-        // qemu_if->unblockQemuThread();
         insn_queue_zero.pop(exit_flag,insn); 
         // std::cerr << " uid " << std::dec << counter++ << " -> " <<
-        // " pc " << std::hex << insn->pc <<
-        // " opcode " << std::hex << insn->opcode << std::endl;
+        // " pc " << std::hex << insn.pc <<
+        // " opcode " << std::hex << insn.opcode << std::endl;
         counter++;
-        // qemu_if->blockQemuThread();
     }
 
     end_time = clock();

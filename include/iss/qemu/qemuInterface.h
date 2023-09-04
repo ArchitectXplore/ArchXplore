@@ -68,7 +68,7 @@ public:
         blockQemuThread();
     };
 
-    insnTunnel<insnPtr>& getInsnQueueByIndex(const uint64_t& hart_index){
+    insnTunnel<isa::traceInsn>& getInsnQueueByIndex(const uint64_t& hart_index){
         resizeInsnTunnel(hart_index+1);
         return m_insn_queue[hart_index];
     };
@@ -78,7 +78,7 @@ public:
             m_insn_queue_lock.lock();
             if(coreNumber > m_insn_queue.size()) {
                 while(coreNumber > m_insn_queue.size()){
-                    m_insn_queue.emplace_back(insnTunnel<insnPtr>(m_tunnleNumber,m_simInterval));
+                    m_insn_queue.emplace_back(insnTunnel<isa::traceInsn>(m_tunnleNumber,m_simInterval));
                 }
             }
             m_insn_queue_lock.unlock();
@@ -135,7 +135,7 @@ private:
     size_t m_simInterval;
     size_t m_tunnleNumber;
 
-    std::vector<insnTunnel<insnPtr>> m_insn_queue;
+    std::vector<insnTunnel<isa::traceInsn>> m_insn_queue;
     std::mutex m_insn_queue_lock;
 
     bool init_done;

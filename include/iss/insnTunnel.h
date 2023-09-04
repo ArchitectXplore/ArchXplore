@@ -77,11 +77,11 @@ public:
             assert(m_rank.size() < m_rank_depth);
             m_rank.emplace_back(insn);
         };
-        InstructionType consume(){
+        
+        void consume(InstructionType& insn){
             assert(m_rank.size() > 0);
-            InstructionType insn = m_rank.front();
+            insn = m_rank.front();
             m_rank.pop_front();
-            return insn;
         }
 
     };
@@ -103,6 +103,9 @@ public:
         m_rank_tail = m_tunnel.begin();
     };
     ~insnTunnel(){};
+    insnTunnel<InstructionType>& operator==(const insnTunnel<InstructionType>& that){
+        return insnTunnel(that);
+    };
 public:
     void push(const InstructionType& insn) {
         // fprintf(stderr,"PRODUCER TRY LOCK RANK %ld -> IS CONSUMING %d\n", m_rank_tail.ptr, curRank.is_consuming());
@@ -122,7 +125,7 @@ public:
         tunnelRank& curRank = *m_rank_head;
         // fprintf(stderr,"CONSUMER TRY LOCK RANK %ld -> IS PRODUCINE %d\n", m_rank_head.ptr, curRank.is_producing());
         m_rank_head->consumer_lock();
-        insn = m_rank_head->consume();
+        m_rank_head->consume(insn);
         if(m_rank_head->is_empty()){
             m_rank_head->consumer_unlock();
             if(++m_rank_head == m_tunnel.end()){
