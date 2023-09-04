@@ -75,13 +75,12 @@ public:
 
     void resizeInsnTunnel(const size_t& coreNumber){
         if(coreNumber > m_insn_queue.size()) {
-            m_insn_queue_lock.lock();
+            std::lock_guard<std::mutex> lock(m_insn_queue_lock);
             if(coreNumber > m_insn_queue.size()) {
                 while(coreNumber > m_insn_queue.size()){
-                    m_insn_queue.emplace_back(insnTunnel<isa::traceInsn>(m_tunnleNumber,m_simInterval));
+                    m_insn_queue.emplace_back(std::move(insnTunnel<isa::traceInsn>(m_tunnleNumber,m_simInterval)));
                 }
             }
-            m_insn_queue_lock.unlock();
         }
     };
 
@@ -135,7 +134,7 @@ private:
     size_t m_simInterval;
     size_t m_tunnleNumber;
 
-    std::vector<insnTunnel<isa::traceInsn>> m_insn_queue;
+    std::deque<insnTunnel<isa::traceInsn>> m_insn_queue;
     std::mutex m_insn_queue_lock;
 
     bool init_done;

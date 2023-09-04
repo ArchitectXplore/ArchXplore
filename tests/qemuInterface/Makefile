@@ -5,13 +5,13 @@ riscv_hello:
 	riscv64-linux-gnu-g++ -fPIE -O3 -o hello hello.cpp
 
 libqemuInterface_plugin.so:
-	g++ -shared -fPIC -g -I../../include -o libqemuInterface_plugin.so ../../src/iss/qemu/qemuInterface_plugin.cpp ../../src/iss/qemu/qemuInterface.cpp
+	g++ -shared -fPIC -O3 -I../../include -o libqemuInterface_plugin.so ../../src/iss/qemu/qemuInterface_plugin.cpp ../../src/iss/qemu/qemuInterface.cpp
 
 qemuInterface_user_test: clean libqemuInterface_plugin.so
-	g++ -fPIE -g -o qemuInterface_test qemuInterface_test.cpp -I../../include -L. -lqemuInterface_plugin -lqemu-riscv64 -D CONFIG_USER_ONLY 
+	g++ -fPIE -O3 -o qemuInterface_test qemuInterface_test.cpp -I../../include -L. -lqemuInterface_plugin -lqemu-riscv64 -D CONFIG_USER_ONLY 
 
 qemuInterface_sys_test: clean libqemuInterface_plugin.so
-	g++ -fPIE -g -o qemuInterface_test qemuInterface_test.cpp -I../../include -L. -lqemuInterface_plugin -lqemu-system-riscv64
+	g++ -fPIE -O3 -o qemuInterface_test qemuInterface_test.cpp -I../../include -L. -lqemuInterface_plugin -lqemu-system-riscv64
 
 run_user_test: 
 	./qemuInterface_test -plugin libqemuInterface_plugin.so hello

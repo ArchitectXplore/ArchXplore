@@ -58,14 +58,16 @@ int main(int argc, char **argv, char **envp)
 
     auto& qemu_thread = qemu_if->createQemuThread({argc,argv,envp});
 
-    for(size_t core_id = 0 ; core_id < 1  ; core_id++){
+    for(size_t core_id = 0 ; core_id < 4  ; core_id++){
         timing_thread_pool.emplace_back(std::move(create_timing_thread(qemu_if,core_id)));
     }
 
     qemu_if->unblockQemuThread();
 
-    for(size_t core_id = 0 ; core_id < 4 ; core_id++){
-        timing_thread_pool[core_id].join();
+    for(auto it = timing_thread_pool.begin(); it != timing_thread_pool.end(); it++){
+        if(it->joinable()){
+            it->join();
+        }
     }
 
     qemu_if->exit();

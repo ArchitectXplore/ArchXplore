@@ -9,6 +9,8 @@ using namespace archXplore::isa;
 
 qemu_plugin_id_t plugin_id;
 
+size_t coreNumber;
+
 bool system_emulation;
 
 bool qemu_init_done;
@@ -111,8 +113,12 @@ static void plugin_user_exit(void){
     if(!qemu_exit_done){
         qemu_exit_lock.lock();
         if(!qemu_exit_done){
-            for(size_t i = 0 ; i < last_exec_insn.size(); i++){
-                send_insn_by_hart(i);
+            if(qemu_init_done){
+                for(size_t i = 0 ; i < last_exec_insn.size(); i++){
+                    send_insn_by_hart(i);
+                }
+            } else {
+                resize_last_exec_insn(coreNumber);
             }
             interface_instance->qemuExitRequest();
         }
@@ -145,7 +151,7 @@ int qemu_plugin_install(qemu_plugin_id_t id, const qemu_info_t *info,
 
     system_emulation = info->system_emulation; 
     plugin_id = id;
-
+    coreNumber = info->system.smp_vcpus;
     plugin_init();
     qemu_plugin_register_vcpu_tb_trans_cb(id, vcpu_tb_trans);
     qemu_plugin_register_atexit_cb(id, plugin_exit, NULL);
