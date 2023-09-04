@@ -33,11 +33,12 @@ void coreTimingThread(const std::shared_ptr<qemuInterface>& qemu_if, const size_
 
     elapsed_second = double(end_time - start_time) / CLOCKS_PER_SEC;
 
-    std::cerr << "Core " << cpu_index << ":" << std::endl
-        << "\tTotal host time elapsed(s) : " << elapsed_second << std::endl
-        << "\tTotal instruciton count : " << counter << std::endl
-        << "\tMillion instructions per second(MIPS) : " << (((double)counter / 1000000.0) / elapsed_second)
-        << std::endl;
+    fprintf(stderr, "Core %ld :\
+        \n\tTotal host time elapsed(s) : %lf\
+        \n\tTotal instruciton count : %ld\
+        \n\tMillion instructions per second(MIPS) : %lf\n",
+        cpu_index,elapsed_second,counter,(((double)counter / 1000000.0) / elapsed_second)
+    );
 
 }
 

@@ -33,10 +33,11 @@ int main(int argc, char **argv, char **envp)
 
     elapsed_second = double(end_time - start_time) / CLOCKS_PER_SEC;
 
-    std::cerr << "Total host time elapsed(s) : " << elapsed_second << std::endl
-        << "Total instruciton count : " << counter << std::endl
-        << "Million instructions per second(MIPS) : " << (((double)counter / 1000000.0) / elapsed_second)
-        << std::endl;
+    fprintf(stderr, "Total host time elapsed(s) : %lf\
+        \nTotal instruciton count : %ld\
+        \nMillion instructions per second(MIPS) : %lf\n",
+        elapsed_second,counter,(((double)counter / 1000000.0) / elapsed_second)
+    );
 
     qemu_if->exit();
 
