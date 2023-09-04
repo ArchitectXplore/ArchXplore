@@ -104,7 +104,7 @@ public:
         m_rank_tail = m_tunnel.begin();
     };
     ~insnTunnel(){};
-    insnTunnel<InstructionType>& operator==(const insnTunnel<InstructionType>& that){
+    insnTunnel<InstructionType>& operator=(const insnTunnel<InstructionType>& that){
         return insnTunnel(that);
     };
 public:
