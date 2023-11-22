@@ -1,0 +1,9 @@
+*.so
+*.o
+*.log
+build/*
+__pycache__/*
+CMakeFiles/*
+main.py
+Makefile
+CMakeCache.txt
