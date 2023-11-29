@@ -3,8 +3,8 @@ extern "C"{
     #include <iss/qemu/qemuEmulator.h>
     #include <iss/qemu/qemu-plugin.h>
 } 
-#include <iss/insnTunnel.h>
-#include <isa/traceInsn.h>
+#include <iss/insnTunnel.hpp>
+#include <isa/traceInsn.hpp>
 #include <thread>
 #include <mutex>
 #include <cmath>

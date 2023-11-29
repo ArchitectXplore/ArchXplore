@@ -7,3 +7,6 @@
 [submodule "ext/gem5"]
 	path = ext/gem5
 	url = https://github.com/ArchitectXplore/gem5.git
+[submodule "ext/pybind11"]
+	path = ext/pybind11
+	url = https://github.com/pybind/pybind11.git

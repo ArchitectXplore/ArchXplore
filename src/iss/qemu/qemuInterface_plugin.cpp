@@ -1,5 +1,5 @@
-#include <isa/traceInsn.h>
-#include <iss/qemu/qemuInterface.h>
+#include "isa/traceInsn.hpp"
+#include "iss/qemu/qemuInterface.hpp"
 
 #include <vector>
 #include <mutex>
