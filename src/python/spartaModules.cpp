@@ -97,6 +97,10 @@ void bindSpartaModules(pybind11::module_& parent){
             [](TreeNode& self, const std::string& name) { \
                 return self.getChildAs<Port>(name); \
             },  py::return_value_policy::reference)
+        .def("getChildAsParameter",
+            [](TreeNode& self, const std::string& name) { \
+                return self.getChildAs<ParameterBase>(name); \
+            },  py::return_value_policy::reference)
         ;
 
     py::class_<sparta::RootTreeNode,sparta::TreeNode>(m, "RootTreeNode")
@@ -212,55 +216,10 @@ void bindSpartaModules(pybind11::module_& parent){
             });
 
     py::class_<ParameterBase, TreeNode>(m, "ParameterBase")
+        .def("set", &ParameterBase::pyset)
+        .def("getValueAsString", &ParameterBase::getValueAsString)
         ;
-
-#ifdef GPC_DEV
-
-    py::class_<Parameter<uint32_t>, ParameterBase>(m, "ParameterU32")
-        .def("getTypeName", &Parameter<uint32_t>::getTypeName)
-        .def("getDefault", &Parameter<uint32_t>::getDefault)
-        .def("getDefaultAsString", &Parameter<uint32_t>::getDefaultAsString)
-        .def("getValue", &Parameter<uint32_t>::getValue)
-        .def("getValueAsString", &Parameter<uint32_t>::getValueAsString)
-        .def("peekValue", &Parameter<uint32_t>::peekValue)
-        .def("ignore", &Parameter<uint32_t>::ignore)
-        .def("unread", &Parameter<uint32_t>::unread)
-        .def("isVector", &Parameter<uint32_t>::isVector)
-        .def("isVisibilityAllowed", &Parameter<uint32_t>::isVisibilityAllowed)
-        // .def(py::self == py::self)
-        // .def(py::self != py::self)
-        // .def(py::self > py::self)
-        // .def(py::self >= py::self)
-        // .def(py::self <= py::self)
-        // .def(py::self = py::self)
-        .def("__eq__", [](Parameter<uint32_t>& p, uint32_t a){
-            p = a; 
-        }, py::is_operator())
-        ;   
-
-    py::class_<Parameter<bool>, ParameterBase>(m, "ParameterBool")
-        .def("getTypeName", &Parameter<bool>::getTypeName)
-        .def("getDefault", &Parameter<bool>::getDefault)
-        .def("getDefaultAsString", &Parameter<bool>::getDefaultAsString)
-        .def("getValue", &Parameter<bool>::getValue)
-        .def("getValueAsString", &Parameter<bool>::getValueAsString)
-        .def("peekValue", &Parameter<bool>::peekValue)
-        .def("ignore", &Parameter<bool>::ignore)
-        .def("unread", &Parameter<bool>::unread)
-        .def("isVector", &Parameter<bool>::isVector)
-        .def("isVisibilityAllowed", &Parameter<bool>::isVisibilityAllowed)
-        // .def(py::self == py::self)
-        // .def(py::self != py::self)
-        // .def(py::self > py::self)
-        // .def(py::self >= py::self)
-        // .def(py::self <= py::self)
-        // .def(py::self = py::self)
-        .def("__eq__", [](Parameter<bool>& p, bool a){
-            p = a; 
-        }, py::is_operator())
-        ;   
-        
-#endif
+    
 
 }   
 
