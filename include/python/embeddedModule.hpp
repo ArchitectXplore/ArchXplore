@@ -76,7 +76,7 @@ namespace archXplore
         auto paramBind = pybind11::class_<ParamClass>(m, #ParamClass, pybind11::dynamic_attr());                                          \
         auto portBind = pybind11::class_<UnitClass##Ports>(m, #UnitClass "Ports", pybind11::dynamic_attr());                              \
         auto factoryBind = pybind11::class_<UnitClass##Factory>(m, #UnitClass "Factory", pybind11::dynamic_attr());                       \
-        auto componentBind = pybind11::class_<UnitClass##Component>(m, #UnitClass "Component",                  \
+        auto componentBind = pybind11::class_<UnitClass##Component>(m, #UnitClass "Component",                                            \
                                                                     pybind11::dynamic_attr())                                             \
                                  .def(pybind11::init<sparta::TreeNode *>())                                                               \
                                  .def(pybind11::init<>());                                                                                \
@@ -108,10 +108,13 @@ namespace archXplore
         for (auto it = paramVec.begin(); it != paramVec.end(); ++it)                                                                      \
         {                                                                                                                                 \
             const std::string &name = (*it)->getName();                                                                                   \
-            paramBind.def_property_readonly(                                                                                              \
+            paramBind.def_property(                                                                                                       \
                 name.c_str(),                                                                                                             \
                 [=](ParamClass &self) {                                                                                                   \
                     return self.getParameter(name);                                                                                       \
+                },                                                                                                                        \
+                [=](ParamClass &self, const pybind11::object &value) {                                                                    \
+                    self.getParameter(name)->pyset(value);                                                                                \
                 },                                                                                                                        \
                 pybind11::return_value_policy::reference);                                                                                \
         }                                                                                                                                 \
