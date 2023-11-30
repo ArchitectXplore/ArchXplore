@@ -6,7 +6,6 @@
 #include <sparta/ports/DataPort.hpp>
 #include <sparta/ports/Port.hpp>
 #include <sparta/log/Tap.hpp>
-#include "testpointer.cpp"
 
 // #define GPC_DEV
 
@@ -42,20 +41,21 @@ namespace log {
     };
 }
 
+
 void bindSpartaModules(pybind11::module_& parent){
     //py::dynamic_attr() means we can add dynamic
     //variables to TreeNode in python
 
     auto m  = parent.def_submodule("sparta");
 
-    py::class_<sparta::log::Tap>(m, "LogTap", py::dynamic_attr())
+    py::class_<sparta::log::Tap>(m, "LogTap")
         .def(py::init<TreeNode* , const std::string* , std::ostream& >())
         .def(py::init<TreeNode* , const std::string* , std::string& >())
         .def("detach", &sparta::log::Tap::detach)
         .def("reset", &sparta::log::Tap::reset)
         ;
 
-    py::class_<sparta::log::PyTap>(m, "PyLogTap", py::dynamic_attr())
+    py::class_<sparta::log::PyTap>(m, "PyLogTap")
         .def(py::init<TreeNode* , const std::string* , std::string& >())
         .def(py::init<TreeNode* , const std::string* , py::object& >())
         .def("detach", &sparta::log::PyTap::detach)
@@ -88,6 +88,14 @@ void bindSpartaModules(pybind11::module_& parent){
             [](TreeNode& self, const Clock *clk){
                 return self.setClock(clk);
             })
+        .def("asPortSet" ,
+            [](TreeNode& self) { \
+                return self.getAs<PortSet>(); \
+            },  py::return_value_policy::reference)
+        .def("asParamSet" ,
+            [](TreeNode& self) { \
+                return self.getAs<ParameterSet>(); \
+            },  py::return_value_policy::reference)
         //getChild Part
         .def("getChildAsPortSet", \
             [](TreeNode& self, const std::string& name) { \
@@ -97,13 +105,14 @@ void bindSpartaModules(pybind11::module_& parent){
             [](TreeNode& self, const std::string& name) { \
                 return self.getChildAs<Port>(name); \
             },  py::return_value_policy::reference)
-        .def("getChildAsParameter",
+        // ParamSet
+        .def("getChildAsParamSet", \
             [](TreeNode& self, const std::string& name) { \
-                return self.getChildAs<ParameterBase>(name); \
+                return self.getChildAs<ParameterSet>(name); \
             },  py::return_value_policy::reference)
         ;
 
-    py::class_<sparta::RootTreeNode,sparta::TreeNode>(m, "RootTreeNode")
+    py::class_<sparta::RootTreeNode,sparta::TreeNode>(m, "RootTreeNode", py::dynamic_attr())
         .def(py::init<const std::string &, const std::string &, GlobalTreeNode* >())
         .def(py::init<const std::string &, const std::string &>())
         .def(py::init<const std::string &>())
@@ -143,11 +152,10 @@ void bindSpartaModules(pybind11::module_& parent){
     py::class_<Clock, TreeNode>(m, "Clock")
         .def(py::init<const std::string&, Scheduler*>());
 
-    py::class_<PortSet, TreeNode>(m, "PortSet")
-        .def(py::init<TreeNode *, const std::string &>());
-    
-    py::class_<ParameterSet, TreeNode>(m, "ParameterSet")
-        .def(py::init<TreeNode *>());
+    py::class_<PortSet, TreeNode>(m, "PortSet" , py::dynamic_attr())
+        .def(py::init<TreeNode *, const std::string &>())
+        .def("getPort", &PortSet::getPort, py::return_value_policy::reference)
+        ;
     
     py::enum_<Port::Direction>(m, "PortDirection", py::arithmetic())
         .value("IN", Port::Direction::IN)
@@ -217,11 +225,32 @@ void bindSpartaModules(pybind11::module_& parent){
 
     py::class_<ParameterBase, TreeNode>(m, "ParameterBase")
         .def("set", &ParameterBase::pyset)
+        .def("__eq__", 
+            [](ParameterBase& self, const py::object & val){
+                self.pyset(val);
+            })
         .def("getValueAsString", &ParameterBase::getValueAsString)
+        .def("__str__", 
+            [](ParameterBase& self){
+                return self.getValueAsString();
+            })
+        .def("getTypeName", &ParameterBase::getTypeName)
         ;
-    
+
+    py::class_<ParameterSet, TreeNode>(m, "ParameterSet" , py::dynamic_attr())
+        .def(py::init<TreeNode *>())
+        .def("getParameter",
+        [](const ParameterSet& self, const std::string& name) {
+            return self.getChildAs<ParameterBase>(name, true);
+        }, py::return_value_policy::reference)
+        .def("getParameterAsVoid",
+        [](const ParameterSet& self, const std::string& name) {
+            return self.getChildAs<Parameter<void*>>(name, true);
+        }, py::return_value_policy::reference)
+        ;
+
+
 
 }   
-
     archXplore::python::embeddedModule embedded_sparta(&bindSpartaModules);
 }
