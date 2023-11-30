@@ -1,5 +1,6 @@
 #include "python/embeddedModule.hpp"
 #include <sparta/sparta.hpp>
+#include <sparta/simulation/Unit.hpp>
 #include <sparta/simulation/TreeNode.hpp>
 #include <sparta/simulation/TreeNodePrivateAttorney.hpp>
 #include <sparta/ports/PortSet.hpp>
@@ -48,12 +49,12 @@ void bindSpartaModules(pybind11::module_& parent){
 
     auto m  = parent.def_submodule("sparta");
 
-    py::class_<sparta::log::Tap>(m, "LogTap")
-        .def(py::init<TreeNode* , const std::string* , std::ostream& >())
-        .def(py::init<TreeNode* , const std::string* , std::string& >())
-        .def("detach", &sparta::log::Tap::detach)
-        .def("reset", &sparta::log::Tap::reset)
-        ;
+    // py::class_<sparta::log::Tap>(m, "LogTap")
+    //     .def(py::init<TreeNode* , const std::string* , std::ostream& >())
+    //     .def(py::init<TreeNode* , const std::string* , std::string& >())
+    //     .def("detach", &sparta::log::Tap::detach)
+    //     .def("reset", &sparta::log::Tap::reset)
+    //     ;
 
     py::class_<sparta::log::PyTap>(m, "PyLogTap")
         .def(py::init<TreeNode* , const std::string* , std::string& >())
@@ -83,6 +84,10 @@ void bindSpartaModules(pybind11::module_& parent){
             [](const TreeNode& self){
                 return self.getName();
             }, py::return_value_policy::reference)
+        .def("getDesc", 
+            [](const TreeNode& self){
+                return self.getDesc();
+            }, py::return_value_policy::reference)
             //py::return_value_policy::reference_internal);
         .def("setClock", 
             [](TreeNode& self, const Clock *clk){
@@ -110,6 +115,16 @@ void bindSpartaModules(pybind11::module_& parent){
             [](TreeNode& self, const std::string& name) { \
                 return self.getChildAs<ParameterSet>(name); \
             },  py::return_value_policy::reference)
+        .def("attachTap",
+            [](TreeNode& self, const std::string* category, py::object& dest){
+                sparta::log::PyTap* t = new sparta::log::PyTap(&self, category, dest);
+                return t;
+            }, py::return_value_policy::take_ownership)
+        .def("attachTap",
+            [](TreeNode& self, const std::string* category, std::string& dest){
+                sparta::log::PyTap* t = new sparta::log::PyTap(&self, category, dest);
+                return t;
+            }, py::return_value_policy::take_ownership)
         ;
 
     py::class_<sparta::RootTreeNode,sparta::TreeNode>(m, "RootTreeNode", py::dynamic_attr())
@@ -133,6 +148,21 @@ void bindSpartaModules(pybind11::module_& parent){
         )
         ;
 
+    py::class_<sparta::ResourceTreeNode,sparta::TreeNode>(m, "ResourceTreeNode", py::dynamic_attr())
+        .def(py::init<TreeNode*, const std::string & ,const std::string & , ResourceFactoryBase*>())
+        .def(py::init<const std::string & ,const std::string & , ResourceFactoryBase*>())
+        .def("getParameterSet",
+            [](sparta::ResourceTreeNode& self) {
+                return self.getParameterSet();
+            }, py::return_value_policy::reference
+        )
+        .def("getPortSet", 
+            [](sparta::ResourceTreeNode& self) {
+                sparta::Unit* unit = self.getResourceAs<sparta::Unit*>();
+                return unit->getPortSet();
+            } , py::return_value_policy::reference
+        )
+        ;
 
     py::class_<sparta::Scheduler>(m, "Scheduler")
         .def(py::init<>() )
@@ -238,9 +268,6 @@ void bindSpartaModules(pybind11::module_& parent){
             return self.getChildAs<Parameter<void*>>(name, true);
         }, py::return_value_policy::reference)
         ;
-
-
-
 }   
     archXplore::python::embeddedModule embedded_sparta(&bindSpartaModules);
 }
