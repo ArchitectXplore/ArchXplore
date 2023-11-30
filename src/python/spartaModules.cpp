@@ -254,6 +254,16 @@ void bindSpartaModules(pybind11::module_& parent){
             });
 
     py::class_<ParameterBase, TreeNode>(m, "ParameterBase")
+        .def("set", &ParameterBase::pyset)
+        .def("__eq__", 
+            [](ParameterBase& self, const py::object & val){
+                self.pyset(val);
+            })
+        .def("getValueAsString", &ParameterBase::getValueAsString)
+        .def("__str__", 
+            [](ParameterBase& self){
+                return self.getValueAsString();
+            })
         .def("getTypeName", &ParameterBase::getTypeName)
         ;
 
