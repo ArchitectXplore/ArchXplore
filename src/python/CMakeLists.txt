@@ -1,0 +1,1 @@
+target_sources(src_lib PRIVATE embeddedModule.cpp)    

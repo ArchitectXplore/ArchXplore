@@ -1,17 +1,17 @@
 cmake_minimum_required(VERSION 3.11)
-project(pybindSparta LANGUAGES CXX)
+project(spartaInPythonTest LANGUAGES CXX)
 
 # Set up example
 
-add_executable(main Ports_example.cpp ${ArchXplore_Python})
+add_executable(spartaInPythonTest Ports_example.cpp ${ArchXplore_SRCS})
 
-target_include_directories(main PUBLIC .)
+target_include_directories(spartaInPythonTest PUBLIC .)
 
-target_include_directories(main PUBLIC ${ArchXplore_INCLUDES})
+target_include_directories(spartaInPythonTest PUBLIC ${ArchXplore_INCLUDES})
 
-target_link_libraries(main PRIVATE ${ArchXplore_LIBS})
+target_link_libraries(spartaInPythonTest PRIVATE ${ArchXplore_LIBS})
 
-add_custom_command(TARGET main POST_BUILD
+add_custom_command(TARGET spartaInPythonTest POST_BUILD
     COMMENT "[INFO] Install python stub into ${CMAKE_BINARY_DIR}/stubs !" 
-    COMMAND ./main ${ArchXplore_BASE}/python/util/stubgen.py -o ${CMAKE_BINARY_DIR}/stubs archXplore 
+    COMMAND ./spartaInPythonTest ${ArchXplore_BASE}/python/util/stubgen.py -o ${CMAKE_BINARY_DIR}/stubs archXplore 
 )

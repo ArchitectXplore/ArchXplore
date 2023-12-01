@@ -8,6 +8,10 @@ project(ARCHXPLORE LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Set C/C++ compiler you with to use
+set(CMAKE_C_COMPILER ${CC})
+set(CMAKE_CXX_COMPILER ${CXX})
+
 # Build Option -> Debug/Release
 option(DEBUG "Debug option" OFF)
 if(DEBUG) 
@@ -22,10 +26,9 @@ set(ArchXplore_LIBS "")
 
 set(ArchXplore_INCLUDES ${ArchXplore_BASE}/include)
 
-set(ArchXplore_SRCS "")
-
 # Build Marco
 include(cmake/buildMacro.cmake)
+include(ExternalProject)
 
 # Pybind11 setup
 include(cmake/pybind11.cmake)
@@ -33,13 +36,21 @@ include(cmake/pybind11.cmake)
 # Sparta setup
 include(cmake/sparta.cmake)
 
-# Add Source Directory
-file(GLOB ArchXplore_Python "src/python/*.cpp")
+# QEMU setup
+include(cmake/qemu.cmake)
 
-list(APPEND ArchXplore_SRCS
-    ${ArchXplore_Python}
-)
+# Add Source Directory
+add_library(src_lib "")
+
+add_subdirectory(src)
+
+list(APPEND ArchXplore_LIBS src_lib)
+
+add_executable(main src/python/archXplore.cpp)
+
+target_include_directories(main PUBLIC ${ArchXplore_INCLUDES})
+
+target_link_libraries(main PRIVATE ${ArchXplore_LIBS})
 
 # Add Tests
 add_subdirectory(tests EXCLUDE_FROM_ALL)
-

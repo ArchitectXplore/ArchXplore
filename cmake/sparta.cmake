@@ -10,5 +10,3 @@ include(${SPARTA_DIR}/cmake/sparta-config.cmake)
 list(APPEND ArchXplore_LIBS ${Sparta_LIBS})
 
 list(APPEND ArchXplore_INCLUDES ${SPARTA_INCLUDE_DIRS})
-
-link_directories(${PROJECT_BINARY_DIR})
