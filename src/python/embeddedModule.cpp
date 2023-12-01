@@ -1,4 +1,5 @@
 #include "python/embeddedModule.hpp"
+#include "python/spartaModules.hpp"
 
 namespace archXplore
 {
@@ -10,6 +11,8 @@ std::shared_ptr<std::vector<embeddedModule::funcPtrType>> embeddedModule::m_bind
 
 
 PYBIND11_EMBEDDED_MODULE(archXplore, m) {
+
+    sparta::bindSpartaModules(m);
 
     auto& funcPoor = embeddedModule::getFuncPool();
     // Execute pybind11 functions 
