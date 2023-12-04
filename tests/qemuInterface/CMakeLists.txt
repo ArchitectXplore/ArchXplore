@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.11)
 project(qemuInterfaceTest LANGUAGES CXX)
 
-
 # System Mode Tests
 add_executable(qemuInterfaceTestLinux)
 

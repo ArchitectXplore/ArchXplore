@@ -1,4 +1,4 @@
-#include <iss/qemu/qemuInterface.h>
+#include <iss/qemu/qemuInterface.hpp>
 #include <iostream>
 #include <ctime>
 

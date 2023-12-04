@@ -1,5 +1,5 @@
 # Set the minimum version of CMake required to build this project
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 
 # Define the project name and the language used
 project(ARCHXPLORE LANGUAGES CXX)
@@ -26,6 +26,8 @@ set(ArchXplore_LIBS "")
 
 set(ArchXplore_INCLUDES ${ArchXplore_BASE}/include)
 
+set(ArchXplore_SRCS "")
+
 # Build Marco
 include(cmake/buildMacro.cmake)
 include(ExternalProject)
@@ -40,17 +42,28 @@ include(cmake/sparta.cmake)
 include(cmake/qemu.cmake)
 
 # Add Source Directory
-add_library(src_lib "")
-
 add_subdirectory(src)
 
-list(APPEND ArchXplore_LIBS src_lib)
+# QEMU Interface
+add_library(qemuInterface STATIC src/iss/qemu/qemuInterface.cpp)
+target_include_directories(qemuInterface PUBLIC ${ArchXplore_INCLUDES})
 
-add_executable(main src/python/archXplore.cpp)
+# QEMU Plugin
+add_library(qemuInterface_plugin SHARED src/iss/qemu/qemuInterface_plugin.cpp)
+target_include_directories(qemuInterface_plugin PUBLIC ${ArchXplore_INCLUDES})
+target_link_libraries(qemuInterface_plugin PRIVATE ${ArchXplore_LIBS} qemuInterface)
 
+# Main
+add_executable(main src/python/archXplorePy.cpp ${ArchXplore_SRCS})
 target_include_directories(main PUBLIC ${ArchXplore_INCLUDES})
+target_link_libraries(main PRIVATE ${ArchXplore_LIBS} qemuInterface)
+add_dependencies(main qemu)
 
-target_link_libraries(main PRIVATE ${ArchXplore_LIBS})
+# Generate Python Stubs
+add_custom_command(TARGET main POST_BUILD
+    COMMENT "[INFO] Install python stub into ${CMAKE_BINARY_DIR}/stubs !" 
+    COMMAND ./main ${ArchXplore_BASE}/python/util/stubgen.py -o ${CMAKE_BINARY_DIR}/stubs archXplore 
+)
 
 # Add Tests
 add_subdirectory(tests EXCLUDE_FROM_ALL)
