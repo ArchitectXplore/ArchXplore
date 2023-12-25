@@ -114,14 +114,14 @@ public:
     void blockQemuThread(){
         std::unique_lock<std::mutex> lock(m_exit_lock);
         if(!m_exit_pending){
-            plugin_qemu_mutex_lock_iothread();
+            qemu_plugin_mutex_lock_iothread();
         }
     };
 
     void unblockQemuThread(){
         std::unique_lock<std::mutex> lock(m_exit_lock);
         if(!m_exit_pending){
-            plugin_qemu_mutex_unlock_iothread();
+            qemu_plugin_mutex_unlock_iothread();
         }
     };
 

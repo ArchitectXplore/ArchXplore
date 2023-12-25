@@ -52,6 +52,7 @@ static void vcpu_mem(unsigned int cpu_index, qemu_plugin_meminfo_t info,
 {
     auto& insn = last_exec_insn[cpu_index];
     insn->addr = vaddr;
+    
     if(system_emulation) {
         qemu_plugin_hwaddr* mem_hwaddr = (qemu_plugin_hwaddr*) qemu_plugin_get_hwaddr(info,vaddr);
         insn->physical_addr = qemu_plugin_hwaddr_phys_addr(mem_hwaddr);

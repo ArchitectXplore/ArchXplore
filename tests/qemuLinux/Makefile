@@ -5,7 +5,7 @@ libqemuInterface_plugin.so:
 	g++ -shared -fPIC -O3 -I../../include -o libqemuInterface_plugin.so ../../src/iss/qemu/qemuInterface_plugin.cpp ../../src/iss/qemu/qemuInterface.cpp
 
 qemuLinux_test: clean libqemuInterface_plugin.so
-	g++ -fPIE -O3 -o qemuLinux_test qemuLinux_test.cpp -I../../include -L. -lqemuInterface_plugin -lqemu-system-riscv64
+	g++ -fPIE -O3 -o qemuLinux_test qemuLinux_test.cpp -I../../include -L. -L../../build/qemu -lqemuInterface_plugin -lqemu-system-riscv64
 
 run_test: 
 	./qemuLinux_test -nographic -machine virt -m 2048 -smp 4 \

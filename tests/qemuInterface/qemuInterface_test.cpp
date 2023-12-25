@@ -12,7 +12,7 @@ int main(int argc, char **argv, char **envp)
     double elapsed_second;
 
     std::shared_ptr<qemuInterface> qemu_if = qemuInterface::getInstance();
-    auto& qemu_thread = qemu_if->createQemuThread({argc,argv,envp});
+    auto& qemu_thread = qemu_if->createQemuThread({argc,argv});
     auto& insn_queue_zero = qemu_if->getInsnQueueByIndex(0);
  
     bool exit_flag = false;

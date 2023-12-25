@@ -16,7 +16,7 @@ namespace sparta
 
     namespace log
     {
-        class PyTap
+        class __attribute__ ((visibility("hidden"))) PyTap
         {
         public:
             PyTap(TreeNode *node, const std::string *pcategory, std::string &dest)

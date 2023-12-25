@@ -3,7 +3,7 @@
 set(SPARTA_DIR "${ArchXplore_BASE}/ext/map/sparta")
 set(SPARTA_INCLUDE_DIRS "${SPARTA_DIR}/include")
 
-add_subdirectory(${SPARTA_DIR})
+add_subdirectory(${SPARTA_DIR} sparta)
 
 include(${SPARTA_DIR}/cmake/sparta-config.cmake)
 
