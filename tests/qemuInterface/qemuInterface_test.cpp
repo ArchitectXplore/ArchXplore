@@ -3,6 +3,7 @@
 #include "iss/qemu/qemuInterface.hpp"
 
 using namespace archXplore::isa;
+using namespace archXplore::iss;
 using namespace archXplore::iss::qemu;
 
 int main(int argc, char **argv, char **envp)
@@ -11,35 +12,25 @@ int main(int argc, char **argv, char **envp)
     time_t start_time, end_time;
     double elapsed_second;
 
-    std::shared_ptr<qemuInterface> qemu_if = qemuInterface::getInstance();
-    auto& qemu_thread = qemu_if->createQemuThread({argc,argv});
-    auto& insn_queue_zero = qemu_if->getInsnQueueByIndex(0);
- 
-    bool exit_flag = false;
-    uint64_t counter = 0;
-    traceInsn insn;
+    qemuInterface::ptrType qemu_if = qemuInterface::getInstance();
 
-    start_time = clock();
-    qemu_if->unblockQemuThread();
-    while(!exit_flag){
-        insn_queue_zero.pop(exit_flag,insn); 
-        // std::cerr << " uid " << std::dec << counter++ << " -> " <<
-        // " pc " << std::hex << insn.pc <<
-        // " opcode " << std::hex << insn.opcode << std::endl;
-        counter++;
+    qemu_if->bootQemuThread({argc, argv, envp});
+
+    bool exit_flag = false;
+
+    while(!exit_flag) { 
+        if(qemu_if->pendingSyncEvent()) { 
+            auto ev = qemu_if->getPendingSyncEvent();
+            if(ev.event_type == systemExit) {
+                exit_flag = true;
+            }
+            else if(ev.event_type == hartInit) {
+            }
+            qemu_if->removeSyncEvent();
+        }
     }
 
-    end_time = clock();
-
-    elapsed_second = double(end_time - start_time) / CLOCKS_PER_SEC;
-
-    fprintf(stderr, "Total host time elapsed(s) : %lf\
-        \nTotal instruciton count : %ld\
-        \nMillion instructions per second(MIPS) : %lf\n",
-        elapsed_second,counter,(((double)counter / 1000000.0) / elapsed_second)
-    );
-
-    qemu_if->exit();
+    qemu_if->qemuThreadJoin();
 
     return 0;
 }

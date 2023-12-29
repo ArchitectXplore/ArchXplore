@@ -1,152 +1,214 @@
 #pragma once
-extern "C"{
+
+extern "C" {
     #include <iss/qemu/qemuEmulator.h>
     #include <iss/qemu/qemu-plugin.h>
-} 
-#include <iss/insnTunnel.hpp>
-#include <isa/traceInsn.hpp>
+}
+
+#include <iostream>
 #include <thread>
 #include <mutex>
-#include <cmath>
+#include <shared_mutex>
+#include <condition_variable>
+
+#include <iss/insnTunnel.hpp>
+#include <iss/systemSyncEvent.hpp>
+#include <isa/traceInsn.hpp>
+
 
 namespace archXplore {
 namespace iss {
 namespace qemu {
 
+
 class qemuInterface;
 
-extern std::shared_ptr<qemuInterface> g_qemuInterface_instance;
-extern std::mutex g_qemuInterface_lock;
+// QEMU Interface Instance variable
+extern std::mutex g_qemu_if_lock;
+extern std::shared_ptr<qemuInterface> g_qemu_if;
+// QEMU Thread
+extern std::unique_ptr<std::thread> g_qemu_thread;
 
-struct qemuArgument_t {
+struct qemuArgs_t {
     int argc;
-    char **argv;
-    char **envp;
+    char** argv;
+    char** envp;
 };
 
-class qemuInterface
+// class CPUState {
+// public:
+//     CPUState() {};
+//     ~CPUState() {};
+//     auto popHead() -> isa::traceInsn {
+//     };
+//     auto exit() -> void {
+//     };
+// private:
+//     std::mutex m_lock;
+//     std::condition_variable m_cond;
+//     insnTunnel<isa::traceInsn> m_insnTunnel;
+// };
+
+
+
+
+class qemuInterface 
 {
-public:
-    typedef std::shared_ptr<isa::traceInsn> insnPtr;
+private:
+    
+    template <typename T>
+    struct userDataMaintainer {
+    public:
+        void append(T* data) {
+            m_dataVec.push_back(data);
+        };
+        void flush() { 
+            do { 
+                delete m_dataVec.front();
+                m_dataVec.pop_front();
+            } while(m_dataVec.size());
+        }
+    private:
+        std::vector<T*> m_dataVec;
+    };
 
 public:
-    // Delected function
+    using ptrType = std::shared_ptr<qemuInterface>;
+    // Deleted function 
     qemuInterface(qemuInterface&) = delete;
+    qemuInterface(const qemuInterface&) = delete;
     qemuInterface& operator=(const qemuInterface&) = delete;
-
-public:
-    ~qemuInterface(){};
-
-    void exit(){
-        std::unique_lock<std::mutex> lock(m_exit_lock);
-        m_exit_ready = true;
-        m_exit_cond.notify_one();
+    // Default constructor 
+    qemuInterface() {};
+    // Deconstructor
+    ~qemuInterface() {}; 
+    // Entry function to start qemu thread
+    auto bootQemuThread(const qemuArgs_t& args) -> void {
+        std::lock_guard<std::mutex> lock(g_qemu_if_lock);
+        if(m_qemu_thread == nullptr) {
+            #ifndef CONFIG_USER_ONLY
+                m_qemu_thread = std::make_unique<std::thread>(qemuSystemEmulator, args.argc, args.argv);
+            #else 
+                m_qemu_thread = std::make_unique<std::thread>(qemuUserEmulator, args.argc, args.argv, args.envp);
+            #endif
+        };
     };
-
-    void qemuExitRequest() {
-        for(auto it = m_insn_queue.begin(); it != m_insn_queue.end(); it++){
-            it->producer_do_exit();
+    // Qemu thread guard
+    auto qemuThreadJoin() -> void { 
+        if(m_qemu_thread->joinable()){
+            m_qemu_thread->join();
         }
-        std::unique_lock<std::mutex> lock(m_exit_lock);
-        m_exit_pending = true;
-        while(!m_exit_ready){
-            m_exit_cond.wait(lock);
-        }
     };
-
-    void qemuInitDone(){
-        std::unique_lock<std::mutex> lock(m_init_lock);
-        init_done = true;
-        m_init_cond.notify_one();
+    // Block QEMU thread
+    auto blockQemuThread() -> void { 
+        // Lock QEMU IO thread
+        qemu_plugin_mutex_lock_iothread();
     };
-
-    void waitQemuInit(){
-        std::unique_lock<std::mutex> lock(m_init_lock);
-        while(!init_done){
-            m_init_cond.wait(lock);
-        }
-        blockQemuThread();
+    // Unblock QEMU thread
+    auto unblockQemuThread() -> void { 
+        // Unlock QEMU IO thread
+        qemu_plugin_mutex_unlock_iothread();
     };
-
-    insnTunnel<isa::traceInsn>& getInsnQueueByIndex(const uint64_t& hart_index){
-        resizeInsnTunnel(hart_index+1);
-        return m_insn_queue[hart_index];
+    static auto fetchAddEventId() -> eventId_t { 
+        return m_qemu_sync_event_id.fetch_add(1);
     };
-
-    void resizeInsnTunnel(const size_t& coreNumber){
-        if(coreNumber > m_insn_queue.size()) {
-            std::lock_guard<std::mutex> lock(m_insn_queue_lock);
-            if(coreNumber > m_insn_queue.size()) {
-                while(coreNumber > m_insn_queue.size()){
-                    m_insn_queue.emplace_back(std::move(insnTunnel<isa::traceInsn>(m_tunnleNumber,m_simInterval)));
-                }
+    static auto pendingSyncEvent() -> bool {
+        return m_qemu_sync_event_pending.load(std::memory_order::memory_order_seq_cst);
+    };
+    static auto addSyncEvent(const systemSyncEvent_t& ev) -> void { 
+        // Get Unique Lock to block qemu vCPU thread
+        {
+            std::unique_lock<std::shared_mutex> sync_lock(m_qemu_sync_lock);
+            // Get Unique lock to write qemu-related structure
+            {
+                std::unique_lock<std::mutex> lock(m_qemu_lock);
+                // Push sync event
+                m_qemu_sync_event_pending.store(true, std::memory_order::memory_order_seq_cst);
+                m_qemu_sync_event = ev;
+                // Wait for processing and wakeup
+                while(pendingSyncEvent()) {
+                    m_qemu_cond.wait(lock);
+                };
             }
         }
     };
-
-    void setSimInterval(const size_t& simInterval, const size_t& tunnelNumber = 1){
-        m_simInterval = ((size_t)std::ceil(((double)simInterval/8.0))) * 8; // Align to 64 bytes
-        m_tunnleNumber = tunnelNumber;
+    static auto getPendingSyncEvent() -> systemSyncEvent_t {
+        return m_qemu_sync_event;
     };
-
-    static std::shared_ptr<qemuInterface>& getInstance(){
-        if(g_qemuInterface_instance == nullptr){
-            g_qemuInterface_lock.lock();
-            if(g_qemuInterface_instance == nullptr) {
-                g_qemuInterface_instance = std::shared_ptr<qemuInterface>(new qemuInterface);
-            }
-            g_qemuInterface_lock.unlock();
-        }
-        return g_qemuInterface_instance;
-    };
-
-    std::thread& createQemuThread(const qemuArgument_t& qemu_args) {
-        #ifndef CONFIG_USER_ONLY
-        static std::thread t(qemuSystemEmulator, qemu_args.argc, qemu_args.argv);
-        #else
-        static std::thread t(qemuUserEmulator, qemu_args.argc, qemu_args.argv, qemu_args.envp);
-        #endif
-        waitQemuInit();
-        t.detach();
-        return t;
-    };
-
-    void blockQemuThread(){
-        std::unique_lock<std::mutex> lock(m_exit_lock);
-        if(!m_exit_pending){
-            qemu_plugin_mutex_lock_iothread();
+    static auto removeSyncEvent() -> void {
+        // Get Unique lock to write qemu-related structure
+        {
+            std::unique_lock<std::mutex> lock(m_qemu_lock);
+            m_qemu_sync_event_pending.store(false, std::memory_order::memory_order_seq_cst);
+            // Wait up sync event owner
+            m_qemu_cond.notify_one();
         }
     };
-
-    void unblockQemuThread(){
-        std::unique_lock<std::mutex> lock(m_exit_lock);
-        if(!m_exit_pending){
-            qemu_plugin_mutex_unlock_iothread();
+    // The only entry to get/construct qemuInterface
+    static auto getInstance() -> std::shared_ptr<qemuInterface> {
+        std::lock_guard<std::mutex> lock(g_qemu_if_lock);
+        if(g_qemu_if == nullptr) {
+            g_qemu_if = std::make_shared<qemuInterface>();
         }
+        return g_qemu_if;
+    };
+    /* Instrument functions for QEMU */
+    static auto qemu_vcpu_init(qemu_plugin_id_t id, unsigned int vcpu_index) -> void {
+        // Add CPU Init Event
+        systemSyncEvent_t ev;
+        ev.event_id = fetchAddEventId();
+        ev.event_type = systemSyncEventTypeEnum_t::hartInit;
+        ev.hart_id = vcpu_index;
+        addSyncEvent(ev);
+    };
+    static auto qemu_vcpu_exit(qemu_plugin_id_t id, unsigned int vcpu_index) -> void {
+        
+    };
+    static auto qemu_exit(qemu_plugin_id_t id, void *userdata) -> void { 
+        // Add QEMU Exit Event
+        systemSyncEvent_t ev;
+        ev.event_id = fetchAddEventId();
+        ev.event_type = systemSyncEventTypeEnum_t::systemExit;
+        addSyncEvent(ev);
+    };
+    static auto qemu_vcpu_tb_trans(qemu_plugin_id_t id, qemu_plugin_tb *tb) -> void { 
+        
+        qemu_plugin_insn* insn;
+        
+        for(size_t i = 0 ; i < qemu_plugin_tb_n_insns(tb); ++i) {
+
+            insn = qemu_plugin_tb_get_insn(tb,i);
+
+            // std::cerr << "Translate Insn Address " << std::hex << qemu_plugin_insn_vaddr(insn) << std::endl;
+
+        } 
+    
     };
 
 private:
-    qemuInterface() 
-        : m_simInterval(16384), m_tunnleNumber(1), m_exit_ready(false), init_done(false), m_exit_pending(false)
-    {
-    };
-private:
-    size_t m_simInterval;
-    size_t m_tunnleNumber;
-
-    std::deque<insnTunnel<isa::traceInsn>> m_insn_queue;
-    std::mutex m_insn_queue_lock;
-
-    bool init_done;
-    std::mutex m_init_lock;
-    std::condition_variable m_init_cond;
-
-    bool m_exit_pending;
-    bool m_exit_ready;
-    std::mutex m_exit_lock;
-    std::condition_variable m_exit_cond;
+    // QEMU Thread
+    static std::unique_ptr<std::thread> m_qemu_thread;
+    // QEMU operation mutex
+    static std::mutex m_qemu_lock;
+    static std::shared_mutex m_qemu_sync_lock;
+    static std::condition_variable m_qemu_cond;
+    // QEMU status
+    static std::atomic<eventId_t> m_qemu_sync_event_id;
+    // Global Sync Event Register
+    static std::atomic<bool> m_qemu_sync_event_pending;
+    static systemSyncEvent_t m_qemu_sync_event;
 };
-
-} // namespace qemu
-} // namespace iss
-} // namespace archXplore
+    // QEMU Thread
+    std::unique_ptr<std::thread> qemuInterface::m_qemu_thread = nullptr;
+    // QEMU operation mutex
+    std::mutex qemuInterface::m_qemu_lock;
+    std::shared_mutex qemuInterface::m_qemu_sync_lock;
+    std::condition_variable qemuInterface::m_qemu_cond;
+    // QEMU status
+    std::atomic<eventId_t> qemuInterface::m_qemu_sync_event_id = 0;
+    // Global Sync Event Register
+    std::atomic<bool> qemuInterface::m_qemu_sync_event_pending = false;
+    systemSyncEvent_t qemuInterface::m_qemu_sync_event;
+}
+}
+}

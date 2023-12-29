@@ -92,14 +92,13 @@ public:
         size_t rankNumber = DEFAULT_TUNNEL_RANK_NUMBER, 
         size_t rankDepth = DEFAULT_TUNNEL_RANK_DEPTH
     ) : 
-        m_tunnel(rankNumber,tunnelRank<InstructionType>(rankDepth)),
-        m_producer_exited(false)
+        m_tunnel(rankNumber,tunnelRank<InstructionType>(rankDepth))
     {
         m_rank_head = m_tunnel.begin();
         m_rank_tail = m_tunnel.begin();
     };
     insnTunnel(const insnTunnel<InstructionType>& that) 
-    : m_producer_exited(false), m_tunnel(that.m_tunnel){
+    : m_tunnel(that.m_tunnel){
         m_rank_head = m_tunnel.begin();
         m_rank_tail = m_tunnel.begin();
     };
@@ -122,7 +121,7 @@ public:
             }
         }
     };
-    void pop(bool& exit, InstructionType& insn) {
+    void pop(InstructionType& insn) {
         tunnelRank<InstructionType>& curRank = *m_rank_head;
         // fprintf(stderr,"CONSUMER TRY LOCK RANK %ld -> IS PRODUCINE %d\n", m_rank_head.ptr, curRank.is_producing());
         m_rank_head->consumer_lock();
@@ -132,7 +131,6 @@ public:
             if(++m_rank_head == m_tunnel.end()){
                 m_rank_head = m_tunnel.begin();
             }
-            exit = consumer_exit();
         }
         // fprintf(stderr,"CONSUMER LOCK RANK %ld\n", m_rank_head.ptr);
     };
@@ -151,20 +149,8 @@ public:
             }
         }
     }
-    bool consumer_exit(){
-        if(m_producer_exited) {
-            return is_tunnel_empty();
-        } else {
-            return false;
-        }
-    };
-    void producer_do_exit(){
-        m_producer_exited = true;
-        m_rank_tail->producer_unlock();
-    };
 
 private:
-    bool m_producer_exited;
     typename std::deque<tunnelRank<InstructionType>>::iterator m_rank_head;
     typename std::deque<tunnelRank<InstructionType>>::iterator m_rank_tail;
     std::deque<tunnelRank<InstructionType>> m_tunnel;
