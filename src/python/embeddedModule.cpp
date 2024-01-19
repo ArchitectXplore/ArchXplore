@@ -4,26 +4,25 @@
 namespace archXplore
 {
 
-namespace python
-{
+    namespace python
+    {
 
-std::shared_ptr<std::vector<embeddedModule::funcPtrType>> embeddedModule::m_bindFuncPool = nullptr;
+        std::shared_ptr<std::vector<embeddedModule::funcPtrType>> embeddedModule::m_bindFuncPool = nullptr;
+        std::unordered_map<std::string, pybind11::module_ *> embeddedModule::m_bindPackagePool;
 
+        PYBIND11_EMBEDDED_MODULE(archXplore, m)
+        {
 
-PYBIND11_EMBEDDED_MODULE(archXplore, m) {
+            sparta::bindSpartaModules(m);
 
-    sparta::bindSpartaModules(m);
+            auto &funcPool = embeddedModule::getFuncPool();
+            // Execute pybind11 functions
+            for (auto it = funcPool.begin(); it != funcPool.end(); ++it)
+            {
+                it->operator()(m);
+            }
+        }
 
-    auto& funcPoor = embeddedModule::getFuncPool();
-    // Execute pybind11 functions 
-    for(auto it = funcPoor.begin(); it != funcPoor.end(); ++it){
-        it->operator()(m);
-    }
+    } // namespace python
 
-}
-
-
-} // namespace python
-
-    
 } // namespace archXplore

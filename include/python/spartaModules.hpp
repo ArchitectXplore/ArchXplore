@@ -4,10 +4,10 @@
 #include <sparta/simulation/TreeNode.hpp>
 #include <sparta/simulation/TreeNodePrivateAttorney.hpp>
 #include <sparta/ports/PortSet.hpp>
+#include <sparta/ports/PortVec.hpp>
 #include <sparta/ports/DataPort.hpp>
 #include <sparta/ports/Port.hpp>
 #include <sparta/log/Tap.hpp>
-
 
 namespace sparta
 {
@@ -16,7 +16,7 @@ namespace sparta
 
     namespace log
     {
-        class __attribute__ ((visibility("hidden"))) PyTap
+        class __attribute__((visibility("hidden"))) PyTap
         {
         public:
             PyTap(TreeNode *node, const std::string *pcategory, std::string &dest)
@@ -54,7 +54,7 @@ namespace sparta
         // py::dynamic_attr() means we can add dynamic
         // variables to TreeNode in python
 
-        auto m = parent.def_submodule("sparta");
+        auto m = archXplore::python::embeddedModule::createSubPackage(parent, "sparta");
 
         auto TreeNodeBind = py::class_<TreeNode>(m, "TreeNode", py::dynamic_attr());
 
@@ -117,21 +117,32 @@ namespace sparta
             .def(py::init<TreeNode *, const std::string &>())
             .def("getPort", &PortSet::getPort, py::return_value_policy::reference);
 
+        py::class_<PortVec, TreeNode>(m, "PortVec", py::dynamic_attr())
+            .def(py::init<TreeNode *, const std::string &, const Port::Direction, const std::string &>())
+            .def("getPort", &PortVec::getPort, py::return_value_policy::reference)
+            .def(
+                "__getitem__",
+                [](PortVec &self, uint32_t index)
+                {
+                    return self.getPort(index);
+                },
+                py::return_value_policy::reference);
+
         py::class_<InPort, Port>(m, "InPort")
             .def("bind",
                  [](InPort &self, Port *out)
                  {
-                     return self.bind(out);
+                     self.bind(out);
                  })
             .def("__lshift__",
                  [](InPort &self, Port *out)
                  {
-                     return self.bind(out);
+                     self.bind(out);
                  })
             .def("__rshift__",
                  [](InPort &self, Port *out)
                  {
-                     return self.bind(out);
+                     self.bind(out);
                  });
 
         py::class_<OutPort, Port>(m, "OutPort")
@@ -139,17 +150,17 @@ namespace sparta
             .def("bind",
                  [](OutPort &self, Port *in)
                  {
-                     return self.bind(in);
+                     self.bind(in);
                  })
             .def("__lshift__",
                  [](OutPort &self, Port *in)
                  {
-                     return self.bind(in);
+                     self.bind(in);
                  })
             .def("__rshift__",
                  [](OutPort &self, Port *in)
                  {
-                     return self.bind(in);
+                     self.bind(in);
                  });
 
         py::class_<DataOutPort<uint32_t>, OutPort>(m, "DataOutPort_uint32")
@@ -269,18 +280,16 @@ namespace sparta
                 "attachTap",
                 [](TreeNode &self, const std::string *category, py::object &dest)
                 {
-                    log::PyTap *t = new log::PyTap(&self, category, dest);
-                    return t;
+                    return new log::PyTap(&self, category, dest);
                 },
-                py::return_value_policy::take_ownership)
+                py::return_value_policy::reference)
             .def(
                 "attachTap",
                 [](TreeNode &self, const std::string *category, std::string &dest)
                 {
-                    log::PyTap *t = new log::PyTap(&self, category, dest);
-                    return t;
+                    return new log::PyTap(&self, category, dest);
                 },
-                py::return_value_policy::take_ownership);
+                py::return_value_policy::reference);
 
         py::class_<GlobalTreeNode, TreeNode>(m, "GlobalTreeNode", py::dynamic_attr())
             .def(py::init<>());

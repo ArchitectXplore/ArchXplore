@@ -10,25 +10,28 @@ namespace py = pybind11;
  * all subsequent arguments are passed to the python script as its argv.
  */
 
-int
-main(int argc, const char **argv)
+int main(int argc, const char **argv)
 {
     py::scoped_interpreter guard;
 
     // Embedded python doesn't set up sys.argv, so we'll do that ourselves.
     py::list py_argv;
     auto sys = py::module::import("sys");
-    if (py::hasattr(sys, "argv")) {
+    if (py::hasattr(sys, "argv"))
+    {
         // sys.argv already exists, so grab that.
         py_argv = sys.attr("argv");
-    } else {
+    }
+    else
+    {
         // sys.argv doesn't exist, so create it.
         sys.add_object("argv", py_argv);
     }
     // Clear out argv just in case it has something in it.
     py_argv.attr("clear")();
 
-    if (argc < 2) {
+    if (argc < 2)
+    {
         std::cerr << "Usage: main SCRIPT [arg] ..." << std::endl;
         std::exit(1);
     }
@@ -42,6 +45,3 @@ main(int argc, const char **argv)
 
     return 0;
 }
-
-
-    

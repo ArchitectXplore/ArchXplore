@@ -1,14 +1,14 @@
+
+import archXplore
 from archXplore import *
 
 import sys
-
-import archXplore
 
 rtn = sparta.RootTreeNode()
 
 scheduler = sparta.Scheduler()
 
-device_node = MyDeviceComponent(rtn)
+device_node = MyDevice(rtn)
 
 clk = sparta.Clock("clock", scheduler)
 
