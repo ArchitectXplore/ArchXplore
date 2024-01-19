@@ -40,6 +40,8 @@ namespace archXplore
 
             virtual auto reset() -> void = 0;
 
+            virtual auto cleanUp() -> void {};
+
             virtual auto isRunning() -> bool
             {
                 return m_state;

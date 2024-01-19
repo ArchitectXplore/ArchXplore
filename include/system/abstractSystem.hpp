@@ -40,24 +40,33 @@ namespace archXplore
 
             ~abstractSystem()
             {
-                this->enterTeardown();
             };
 
-            virtual inline auto _build() -> void = 0;
+            virtual auto _build() -> void = 0;
 
-            virtual inline auto _run(sparta::Scheduler::Tick tick) -> void = 0;
+            virtual auto _run(sparta::Scheduler::Tick tick) -> void = 0;
 
-            virtual inline auto _createISS() -> iss::abstractISS::UniquePtr = 0;
+            virtual auto _createISS() -> iss::abstractISS::UniquePtr = 0;
+
+            virtual auto _cleanUp() -> void {};
 
             auto build() -> void
             {
                 _build();
                 registerISS();
+                enterTeardown();
             };
 
             auto run(sparta::Scheduler::Tick tick) -> void
             {
                 _run(tick);
+            };
+
+            auto cleanUp() -> void {
+                for(auto cpuInfo : m_cpuInfos) {
+                    cpuInfo.second.cpu->cleanUp();
+                }
+                _cleanUp();
             };
 
             auto registerISS() -> void

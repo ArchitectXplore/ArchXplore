@@ -13,7 +13,6 @@ namespace archXplore
         };
 
         abstractCPU::~abstractCPU(){
-            getSystemPtr()->enterTeardown();
         };
 
 

@@ -1,3 +1,5 @@
+#include <csignal>
+
 #include "iss/qemu/qemuInterface.hpp"
 
 namespace archXplore {
@@ -34,6 +36,8 @@ QEMU_PLUGIN_EXPORT
 int qemu_plugin_install(qemu_plugin_id_t id, const qemu_info_t *info,
                         int argc, char **argv)
 {
+    // Set up the signal handler
+    signal(SIGINT, &archXplore::iss::qemu::qemuInterface::qemu_shutdown);
     
     qemu_plugin_register_vcpu_init_cb(id, &archXplore::iss::qemu::qemuInterface::qemu_vcpu_init);
     qemu_plugin_register_vcpu_exit_cb(id, &archXplore::iss::qemu::qemuInterface::qemu_vcpu_exit);

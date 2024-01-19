@@ -29,8 +29,10 @@ namespace archXplore
                 };
                 ~qemuSystem()
                 {
-                    m_qemu_if->qemu_shutdown(0);
-                    m_qemu_if->qemuThreadJoin();
+                };
+
+                auto _cleanUp() -> void override {
+                    m_qemu_if->qemu_shutdown();
                 };
 
                 auto _build() -> void override
@@ -64,7 +66,7 @@ namespace archXplore
 
                 auto _run(sparta::Scheduler::Tick tick) -> void override
                 {
-                    m_global_scheduler.run(tick);
+                    m_global_scheduler.run(tick, false, false);
                 };
 
                 auto waitFirstSyncEvent() -> void {
@@ -96,8 +98,9 @@ namespace archXplore
                                     can_exit = false;
                                 }
                             }
-                            m_qemu_if->removeSyncEvent();
-                            m_qemu_sync_event.cancel();
+                            if(can_exit) {
+                                m_qemu_sync_event.cancel();
+                            }
                         }
                     };
                 };

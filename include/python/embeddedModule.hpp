@@ -15,6 +15,8 @@
 #include <sparta/ports/PortSet.hpp>
 #include <sparta/ports/PortVec.hpp>
 
+#include "python/pySpartaLogTap.hpp"
+
 namespace archXplore
 {
 
@@ -98,7 +100,21 @@ namespace archXplore
         auto componentBind = pybind11::class_<UnitClass##Component>(m, #UnitClass,                                                        \
                                                                     pybind11::dynamic_attr())                                             \
                                  .def(pybind11::init<sparta::TreeNode *>())                                                               \
-                                 .def(pybind11::init<>());                                                                                \
+                                 .def(pybind11::init<>())                                                                                 \
+                                 .def(                                                                                                    \
+                                     "attachTap",                                                                                         \
+                                     [](UnitClass##Component &self, const std::string *category, pybind11::object &dest)                  \
+                                     {                                                                                                    \
+                                         return new sparta::log::PyTap(self.getResourceNow()->getContainer(), category, dest);            \
+                                     },                                                                                                   \
+                                     pybind11::return_value_policy::reference)                                                            \
+                                 .def(                                                                                                    \
+                                     "attachTap",                                                                                         \
+                                     [](UnitClass##Component &self, const std::string *category, std::string &dest)                       \
+                                     {                                                                                                    \
+                                         return new sparta::log::PyTap(self.getResourceNow()->getContainer(), category, dest);            \
+                                     },                                                                                                   \
+                                     pybind11::return_value_policy::reference);                                                           \
                                                                                                                                           \
         componentBind.def_property_readonly(                                                                                              \
             "Params",                                                                                                                     \
@@ -113,7 +129,7 @@ namespace archXplore
                 UnitClass##Ports *myPorts = new UnitClass##Ports(self.getResourceAs<sparta::Unit>()->getPortSet());                       \
                 return myPorts;                                                                                                           \
             },                                                                                                                            \
-            pybind11::return_value_policy::reference);                                                                               \
+            pybind11::return_value_policy::reference);                                                                                    \
                                                                                                                                           \
         sparta::RootTreeNode rtn;                                                                                                         \
         UnitClass##Component curTn(&rtn);                                                                                                 \

@@ -147,14 +147,6 @@ namespace archXplore
 #endif
                     };
                 };
-                // Qemu thread guard
-                auto qemuThreadJoin() -> void
-                {
-                    if (m_qemu_thread->joinable())
-                    {
-                        m_qemu_thread->join();
-                    }
-                };
                 // Block QEMU thread
                 auto blockQemuThread() -> void
                 {
@@ -166,6 +158,14 @@ namespace archXplore
                 {
                     // Unlock QEMU IO thread
                     qemu_plugin_mutex_unlock_iothread();
+                };
+                // Qemu thread guard
+                static auto qemuThreadJoin() -> void
+                {
+                    if (m_qemu_thread->joinable())
+                    {
+                        m_qemu_thread->join();
+                    }
                 };
                 static auto inline getHartInsnQueuePtr(const hartId_t hart) -> hartInsnQueue *
                 {
@@ -214,6 +214,7 @@ namespace archXplore
         m_qemu_cond.notify_one();
     }
 };
+
 // The only entry to get/construct qemuInterface
 static auto getInstance() -> std::shared_ptr<qemuInterface>
 {
@@ -241,7 +242,9 @@ static auto qemu_vcpu_exit(qemu_plugin_id_t id, unsigned int vcpu_index) -> void
 };
 static auto qemu_shutdown(int exit_code = 0) -> void
 {
+    removeSyncEvent();
     qemu_plugin_shutdown(exit_code);
+    qemuThreadJoin();
 };
 static auto qemu_exit(qemu_plugin_id_t id, void *userdata) -> void
 {
@@ -289,16 +292,16 @@ static auto qemu_vcpu_insn_exec(unsigned int vcpu_index, void *userdata) -> void
         switch (len)
         {
         case 1:
-            opcode = *((uint8_t*)qemu_plugin_insn_data(insn));
+            opcode = *((uint8_t *)qemu_plugin_insn_data(insn));
             break;
         case 2:
-            opcode = *((uint16_t*)qemu_plugin_insn_data(insn));
+            opcode = *((uint16_t *)qemu_plugin_insn_data(insn));
             break;
         case 4:
-            opcode = *((uint32_t*)qemu_plugin_insn_data(insn));
+            opcode = *((uint32_t *)qemu_plugin_insn_data(insn));
             break;
         case 8:
-            opcode = *((uint64_t*)qemu_plugin_insn_data(insn));
+            opcode = *((uint64_t *)qemu_plugin_insn_data(insn));
             break;
         default:
             throw "Unknown instruction size!\n";

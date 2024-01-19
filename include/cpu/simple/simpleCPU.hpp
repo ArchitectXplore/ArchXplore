@@ -3,6 +3,7 @@
 #include "sparta/sparta.hpp"
 #include "sparta/simulation/Unit.hpp"
 #include "sparta/events/Event.hpp"
+#include "sparta/statistics/Counter.hpp"
 
 #include "cpu/abstractCPU.hpp"
 
@@ -32,12 +33,16 @@ namespace archXplore
 
                 auto reset() -> void override;
 
+                auto cleanUp() -> void override;
+
                 auto exec() -> void;
 
                 static const char *name;
 
             private:
                 sparta::Event<sparta::SchedulingPhase::Tick> m_insn_exec_event;
+                sparta::Counter m_cycle;
+                sparta::Counter m_inst_retired;
             };
 
         } // namespace simple
