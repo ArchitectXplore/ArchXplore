@@ -1,5 +1,6 @@
 #pragma once
 
+#include <unordered_map>
 #include <vector>
 #include <memory>
 #include <functional>
@@ -10,6 +11,9 @@
 #include <pybind11/iostream.h>
 
 #include <sparta/sparta.hpp>
+#include <sparta/ports/Port.hpp>
+#include <sparta/ports/PortSet.hpp>
+#include <sparta/ports/PortVec.hpp>
 
 namespace archXplore
 {
@@ -32,6 +36,16 @@ namespace archXplore
                 return *m_bindFuncPool;
             };
 
+            static pybind11::module_ &createSubPackage(pybind11::module_ &parent, const std::string &name)
+            {
+                if (m_bindPackagePool.find(name) == m_bindPackagePool.end())
+                {
+                    auto m = parent.def_submodule(name.c_str());
+                    m_bindPackagePool[name] = &m;
+                }
+                assert(m_bindPackagePool[name] != nullptr);
+                return *m_bindPackagePool[name];
+            };
             embeddedModule(funcPtrType func)
             {
                 getFuncPool().push_back(func);
@@ -40,6 +54,7 @@ namespace archXplore
 
         private:
             static std::shared_ptr<std::vector<funcPtrType>> m_bindFuncPool;
+            static std::unordered_map<std::string, pybind11::module_ *> m_bindPackagePool;
         };
 
     } // namespace python
@@ -66,17 +81,21 @@ namespace archXplore
         {                                                                                                                                 \
             return m_ports->getPort(name);                                                                                                \
         };                                                                                                                                \
+        sparta::PortVec *getPortVec(const std::string &name)                                                                              \
+        {                                                                                                                                 \
+            return m_ports->getPortVec(name);                                                                                             \
+        }                                                                                                                                 \
                                                                                                                                           \
     private:                                                                                                                              \
         sparta::PortSet *m_ports;                                                                                                         \
     };                                                                                                                                    \
     void bind_##UnitClass(pybind11::module_ &m)                                                                                           \
     {                                                                                                                                     \
-        auto unitBind = pybind11::class_<UnitClass>(m, #UnitClass, pybind11::dynamic_attr());                                             \
-        auto paramBind = pybind11::class_<ParamClass>(m, #ParamClass, pybind11::dynamic_attr());                                          \
-        auto portBind = pybind11::class_<UnitClass##Ports>(m, #UnitClass "Ports", pybind11::dynamic_attr());                              \
-        auto factoryBind = pybind11::class_<UnitClass##Factory>(m, #UnitClass "Factory", pybind11::dynamic_attr());                       \
-        auto componentBind = pybind11::class_<UnitClass##Component>(m, #UnitClass "Component",                                            \
+        auto unitBind = pybind11::class_<UnitClass>(m, "__" #UnitClass, pybind11::dynamic_attr());                                        \
+        auto paramBind = pybind11::class_<ParamClass>(m, "__" #ParamClass, pybind11::dynamic_attr());                                     \
+        auto portBind = pybind11::class_<UnitClass##Ports>(m, "__" #UnitClass "Ports", pybind11::dynamic_attr());                         \
+        auto factoryBind = pybind11::class_<UnitClass##Factory>(m, "__" #UnitClass "Factory", pybind11::dynamic_attr());                  \
+        auto componentBind = pybind11::class_<UnitClass##Component>(m, #UnitClass,                                                        \
                                                                     pybind11::dynamic_attr())                                             \
                                  .def(pybind11::init<sparta::TreeNode *>())                                                               \
                                  .def(pybind11::init<>());                                                                                \
@@ -94,7 +113,7 @@ namespace archXplore
                 UnitClass##Ports *myPorts = new UnitClass##Ports(self.getResourceAs<sparta::Unit>()->getPortSet());                       \
                 return myPorts;                                                                                                           \
             },                                                                                                                            \
-            pybind11::return_value_policy::take_ownership);                                                                               \
+            pybind11::return_value_policy::reference);                                                                               \
                                                                                                                                           \
         sparta::RootTreeNode rtn;                                                                                                         \
         UnitClass##Component curTn(&rtn);                                                                                                 \
@@ -118,15 +137,50 @@ namespace archXplore
                 },                                                                                                                        \
                 pybind11::return_value_policy::reference);                                                                                \
         }                                                                                                                                 \
-                                                                                                                                          \
-        sparta::TreeNode::ChildrenVector portVec = curTn.getResourceAs<sparta::Unit>()->getPortSet()->getChildren();                      \
-        for (auto it = portVec.begin(); it != portVec.end(); it++)                                                                        \
+        sparta::PortSet *portSet = curTn.getResourceAs<sparta::Unit>()->getPortSet();                                                     \
+        sparta::PortSet::RegisteredPortMap portMap;                                                                                       \
+        portMap = portSet->getPorts(sparta::Port::Direction::IN);                                                                         \
+        for (auto it = portMap.begin(); it != portMap.end(); it++)                                                                        \
         {                                                                                                                                 \
-            const std::string &name = (*it)->getName().c_str();                                                                           \
+            const std::string &name = it->first;                                                                                          \
             portBind.def_property_readonly(                                                                                               \
                 name.c_str(),                                                                                                             \
                 [=](UnitClass##Ports &self) {                                                                                             \
                     return self.getPort(name);                                                                                            \
+                },                                                                                                                        \
+                pybind11::return_value_policy::reference);                                                                                \
+        }                                                                                                                                 \
+        portMap = portSet->getPorts(sparta::Port::Direction::OUT);                                                                        \
+        for (auto it = portMap.begin(); it != portMap.end(); it++)                                                                        \
+        {                                                                                                                                 \
+            const std::string &name = it->first;                                                                                          \
+            portBind.def_property_readonly(                                                                                               \
+                name.c_str(),                                                                                                             \
+                [=](UnitClass##Ports &self) {                                                                                             \
+                    return self.getPort(name);                                                                                            \
+                },                                                                                                                        \
+                pybind11::return_value_policy::reference);                                                                                \
+        }                                                                                                                                 \
+        sparta::PortSet::RegisteredPortVecMap portVecMap;                                                                                 \
+        portVecMap = portSet->getPortVecs(sparta::Port::Direction::IN);                                                                   \
+        for (auto it = portVecMap.begin(); it != portVecMap.end(); it++)                                                                  \
+        {                                                                                                                                 \
+            const std::string &name = it->first;                                                                                          \
+            portBind.def_property_readonly(                                                                                               \
+                name.c_str(),                                                                                                             \
+                [=](UnitClass##Ports &self) {                                                                                             \
+                    return self.getPortVec(name);                                                                                         \
+                },                                                                                                                        \
+                pybind11::return_value_policy::reference);                                                                                \
+        }                                                                                                                                 \
+        portVecMap = portSet->getPortVecs(sparta::Port::Direction::OUT);                                                                  \
+        for (auto it = portVecMap.begin(); it != portVecMap.end(); it++)                                                                  \
+        {                                                                                                                                 \
+            const std::string &name = it->first;                                                                                          \
+            portBind.def_property_readonly(                                                                                               \
+                name.c_str(),                                                                                                             \
+                [=](UnitClass##Ports &self) {                                                                                             \
+                    return self.getPortVec(name);                                                                                         \
                 },                                                                                                                        \
                 pybind11::return_value_policy::reference);                                                                                \
         }                                                                                                                                 \

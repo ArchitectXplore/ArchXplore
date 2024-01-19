@@ -79,7 +79,7 @@ public:
         assert(m_rank.size() > 0);
         insn = m_rank.front();
         m_rank.pop_front();
-    }
+    };
 
 };
 
@@ -148,7 +148,10 @@ public:
                 return false;
             }
         }
-    }
+    };
+    void producer_exit() {
+        m_rank_tail->producer_unlock();
+    };
 
 private:
     typename std::deque<tunnelRank<InstructionType>>::iterator m_rank_head;

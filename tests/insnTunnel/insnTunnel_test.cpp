@@ -12,18 +12,14 @@ void producer_thread(){
         tunnel.push(i);
         // if(i % 1000 == 1)
     }
-    tunnel.producer_do_exit();
+    tunnel.producer_exit();
     // std::cout << "PRODUCER EXIT!" << std::endl;
 };
 
 void consumer_thread(){
-    for(size_t i = 0; ; i++){
-        bool exit;
+    for(size_t i = 0; i < 1000000 ; i++){
         uint64_t data;
-        tunnel.pop(exit,data);
-        if(exit){
-            break;
-        }
+        tunnel.pop(data);
         // if(i % 1000 == 1)
         assert(data == i);
     }

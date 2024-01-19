@@ -1,1 +1,5 @@
-add_sources(embeddedModule.cpp)
+add_sources(
+    embeddedModule.cpp 
+    issModules.cpp
+    systemModules.cpp
+)

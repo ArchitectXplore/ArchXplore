@@ -1,13 +1,9 @@
 #pragma once
 
-#include <memory>
+#include "iss/type.hpp"
 
 namespace archXplore {
 namespace iss {
-
-
-typedef uint64_t eventId_t;
-typedef uint16_t hartId_t;
 
 enum systemSyncEventTypeEnum_t  {
     systemInit,

@@ -8,6 +8,20 @@ namespace qemu {
 std::mutex g_qemu_if_lock;
 qemuInterface::ptrType g_qemu_if = nullptr;
 
+// QEMU Thread
+std::thread* m_qemu_thread = nullptr;
+// QEMU operation mutex
+std::mutex m_qemu_lock;
+std::shared_mutex m_qemu_sync_lock;
+std::condition_variable m_qemu_cond;
+// QEMU status
+std::atomic<eventId_t> m_qemu_sync_event_id = 0;
+// Global Sync Event Register
+std::atomic<bool> m_qemu_sync_event_pending = false;
+systemSyncEvent_t m_qemu_sync_event;
+// Instruction Queue
+hartInsnQueue* m_qemu_insn_queue[MAX_HART];
+
 }
 }
 }
