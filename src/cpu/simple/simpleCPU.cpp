@@ -31,9 +31,8 @@ namespace archXplore
 
             auto simpleCPU::cleanUp() -> void
             {
-                info_logger_ << getName() << " -> "
-                             << "Cycle : " << m_cycle << ", "
-                             << "Retired Instructions : " << m_inst_retired << std::endl;
+                info_logger_ << m_cycle;
+                info_logger_ << m_inst_retired;
             };
 
             auto simpleCPU::exec() -> void

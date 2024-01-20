@@ -17,19 +17,23 @@ namespace sparta
         class __attribute__((visibility("hidden"))) PyTap
         {
         public:
-            PyTap(TreeNode *node, const std::string *pcategory, std::string &dest)
-                : myBuffer(py::module_::import("sys").attr("stdout")), myStream(nullptr)
-            {
-                myTap = new Tap(node, pcategory, dest);
-            };
             PyTap(TreeNode *node, const std::string *pcategory, py::object &dest)
-                : myBuffer(dest), myStream(&myBuffer)
             {
-                myTap = new Tap(node, pcategory, myStream);
+                try {
+                    std::string t = dest.cast<std::string>();
+                    myTap = new Tap(node, pcategory, t);
+                }
+                catch(...){
+                    myBuffer = new py::detail::pythonbuf(dest);
+                    myStream = new std::ostream(myBuffer);
+                    myTap = new Tap(node, pcategory, *myStream);
+                }
             };
             ~PyTap()
             {
-                delete myTap;
+                if(myTap != nullptr) delete myTap;
+                if(myStream != nullptr) delete myStream;
+                if(myBuffer != nullptr) delete myBuffer;
             };
             void detach()
             {
@@ -42,8 +46,8 @@ namespace sparta
 
         protected:
             Tap *myTap;
-            std::ostream myStream;
-            py::detail::pythonbuf myBuffer;
+            std::ostream* myStream;
+            py::detail::pythonbuf* myBuffer;
         };
     }
 }

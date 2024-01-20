@@ -8,7 +8,6 @@ namespace archXplore
     {
 
         std::shared_ptr<std::vector<embeddedModule::funcPtrType>> embeddedModule::m_bindFuncPool = nullptr;
-        std::unordered_map<std::string, pybind11::module_ *> embeddedModule::m_bindPackagePool;
 
         PYBIND11_EMBEDDED_MODULE(archXplore, m)
         {

@@ -26,7 +26,6 @@ namespace sparta
         auto TreeNodeBind = py::class_<TreeNode>(m, "TreeNode", py::dynamic_attr());
 
         py::class_<log::PyTap>(m, "PyLogTap")
-            .def(py::init<TreeNode *, const std::string *, std::string &>())
             .def(py::init<TreeNode *, const std::string *, py::object &>())
             .def("detach", &log::PyTap::detach)
             .def("reset", &log::PyTap::reset);
@@ -246,13 +245,6 @@ namespace sparta
             .def(
                 "attachTap",
                 [](TreeNode &self, const std::string *category, py::object &dest)
-                {
-                    return new log::PyTap(&self, category, dest);
-                },
-                py::return_value_policy::reference)
-            .def(
-                "attachTap",
-                [](TreeNode &self, const std::string *category, std::string &dest)
                 {
                     return new log::PyTap(&self, category, dest);
                 },

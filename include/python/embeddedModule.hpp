@@ -38,15 +38,9 @@ namespace archXplore
                 return *m_bindFuncPool;
             };
 
-            static pybind11::module_ &createSubPackage(pybind11::module_ &parent, const std::string &name)
+            static pybind11::module_ createSubPackage(pybind11::module_ &parent, const std::string &name)
             {
-                if (m_bindPackagePool.find(name) == m_bindPackagePool.end())
-                {
-                    auto m = parent.def_submodule(name.c_str());
-                    m_bindPackagePool[name] = &m;
-                }
-                assert(m_bindPackagePool[name] != nullptr);
-                return *m_bindPackagePool[name];
+                return parent.def_submodule(name.c_str());
             };
             embeddedModule(funcPtrType func)
             {
@@ -56,7 +50,6 @@ namespace archXplore
 
         private:
             static std::shared_ptr<std::vector<funcPtrType>> m_bindFuncPool;
-            static std::unordered_map<std::string, pybind11::module_ *> m_bindPackagePool;
         };
 
     } // namespace python
@@ -104,13 +97,6 @@ namespace archXplore
                                  .def(                                                                                                    \
                                      "attachTap",                                                                                         \
                                      [](UnitClass##Component &self, const std::string *category, pybind11::object &dest)                  \
-                                     {                                                                                                    \
-                                         return new sparta::log::PyTap(self.getResourceNow()->getContainer(), category, dest);            \
-                                     },                                                                                                   \
-                                     pybind11::return_value_policy::reference)                                                            \
-                                 .def(                                                                                                    \
-                                     "attachTap",                                                                                         \
-                                     [](UnitClass##Component &self, const std::string *category, std::string &dest)                       \
                                      {                                                                                                    \
                                          return new sparta::log::PyTap(self.getResourceNow()->getContainer(), category, dest);            \
                                      },                                                                                                   \
