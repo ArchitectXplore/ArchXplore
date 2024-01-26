@@ -2,7 +2,7 @@
 # ===========================
 set(QEMU_DIR "${ArchXplore_BASE}/ext/qemu")
 
-if(CMAKE_BUILD_TYPE EQUAL Debug) 
+if(CMAKE_BUILD_TYPE STREQUAL Debug) 
     set(QEMU_DEBUG_FLAG --enable-debug)
 else()
     set(QEMU_DEBUG_FLAG )

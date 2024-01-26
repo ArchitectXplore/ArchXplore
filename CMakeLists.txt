@@ -12,11 +12,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_C_COMPILER ${CC})
 set(CMAKE_CXX_COMPILER ${CXX})
 
+# Reset CMAKE_CXX_FLAGS
+set(CMAKE_CXX_FLAGS "")
+
 # Default Build Option -> Debug/Release
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build (Debug/Release)" FORCE)
-elseif(CMAKE_BUILD_TYPE EQUAL "Debug")
-    add_compile_options(-O0 -g)
 endif()
 
 # Build QEMU User Mode 
