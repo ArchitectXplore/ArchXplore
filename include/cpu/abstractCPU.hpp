@@ -5,9 +5,9 @@
 #include "sparta/simulation/Unit.hpp"
 #include "sparta/utils/SpartaAssert.hpp"
 #include "sparta/simulation/Clock.hpp"
+#include "sparta/statistics/Counter.hpp"
 
 #include "iss/abstractISS.hpp"
-
 
 // Forward Declaration
 namespace archXplore::system
@@ -21,10 +21,17 @@ namespace archXplore
     namespace cpu
     {
 
-        enum cpuState_t
+        enum cpuStatus_t
         {
-            Power_off,
-            Power_on
+            INACTIVE,
+            ACTIVE,
+            BLOCKED_COMM,
+            BLOCKED_MUTEX,
+            BLOCKED_BARRIER,
+            BLOCKED_COND,
+            BLOCKED_JOIN,
+            COMPLETED,
+            NUM_STATUSES
         };
 
         class abstractCPU : public sparta::Unit
@@ -34,54 +41,55 @@ namespace archXplore
             abstractCPU(const abstractCPU &that) = delete;
             abstractCPU &operator=(const abstractCPU &that) = delete;
 
-            abstractCPU(sparta::TreeNode *tn, const iss::hartId_t &tid, const sparta::Clock::Frequency &freq);
+            abstractCPU(sparta::TreeNode *tn, const hartId_t &tid, const sparta::Clock::Frequency &freq);
 
             ~abstractCPU();
 
             virtual auto reset() -> void = 0;
 
-            virtual auto cleanUp() -> void {};
+            virtual auto cleanUp() -> void{};
 
-            virtual auto isRunning() -> bool
-            {
-                return m_state;
+            virtual auto tick() -> void {
+                m_cycle++;
             };
 
-            virtual auto powerOn() -> void
+            auto isRunning() const -> bool
             {
-                m_state = cpuState_t::Power_on;
-                reset();
+                return m_status > cpuStatus_t::INACTIVE && m_status < cpuStatus_t::COMPLETED;
             };
-
-            virtual auto powerOff() -> void
+            auto isBlocked() const -> bool
             {
-                m_state = cpuState_t::Power_off;
+                return m_status > cpuStatus_t::ACTIVE && m_status < cpuStatus_t::COMPLETED;
             };
-
-            virtual auto getISSPtr() -> iss::abstractISS *
+            auto isCompleted() const -> bool
+            {
+                return m_status == cpuStatus_t::COMPLETED;
+            };
+            auto getISSPtr() -> iss::abstractISS *
             {
                 return m_iss.get();
             };
-
-            virtual auto getSystemPtr() -> system::abstractSystem *;
-
-            auto getThreadID() -> const iss::hartId_t
+            auto getSystemPtr() -> system::abstractSystem *;
+            auto getThreadID() -> const hartId_t
             {
                 return m_tid;
             };
-
             auto setISS(iss::abstractISS::UniquePtr iss) -> void
             {
-                sparta_assert((iss != nullptr), "Setting iss which is nullptr");
+                sparta_assert((iss != nullptr), "Setting iss to nullptr");
                 m_iss = std::move(iss);
-                m_iss->init(this);
+                m_iss->setCPU(this);
             };
 
         public:
-            // CPU State
-            cpuState_t m_state = cpuState_t::Power_off;
+            // CPU Status
+            cpuStatus_t m_status;
+            // Cycle counter
+            sparta::Counter m_cycle;
+            // Instruction retired counter
+            sparta::Counter m_instret;
             // Unique Thread Id
-            const iss::hartId_t m_tid;
+            const hartId_t m_tid;
             // Processor frequency
             const sparta::Clock::Frequency m_freq;
 

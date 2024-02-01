@@ -17,12 +17,10 @@ namespace archXplore
                                     CREATE_SPARTA_HANDLER(simpleCPU, exec)),
                   m_cycle(&unit_stat_set_, "cycle", "CPU runtime in cycle",
                           sparta::CounterBase::CounterBehavior::COUNT_NORMAL),
-                  m_inst_retired(&unit_stat_set_, "instret", "Counter of retired instructions",
-                                 sparta::CounterBase::CounterBehavior::COUNT_NORMAL){};
+                  m_instret(&unit_stat_set_, "instret", "Counter of retired instructions",
+                            sparta::CounterBase::CounterBehavior::COUNT_NORMAL){};
 
-            simpleCPU::~simpleCPU()
-            {
-            };
+            simpleCPU::~simpleCPU(){};
 
             auto simpleCPU::reset() -> void
             {
@@ -32,7 +30,7 @@ namespace archXplore
             auto simpleCPU::cleanUp() -> void
             {
                 info_logger_ << m_cycle;
-                info_logger_ << m_inst_retired;
+                info_logger_ << m_instret;
             };
 
             auto simpleCPU::exec() -> void

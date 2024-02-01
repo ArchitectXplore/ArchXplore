@@ -15,16 +15,9 @@ namespace archXplore
         {
             struct memAccess_t
             {
-                enum memType_t
-                {
-                    R,
-                    W,
-                    RW
-                };
                 addr_t vaddr;
                 // iss::addr_t paddr;
                 uint8_t len;
-                memType_t type;
             };
 
             struct branchInfo_t
@@ -32,6 +25,8 @@ namespace archXplore
                 uint64_t target_pc;
             };
 
+            // Last instruction flag
+            bool is_last;
             // Unique instruction id
             eventId_t uid;
             // instruction information
@@ -44,7 +39,12 @@ namespace archXplore
             // Memory Access
             std::vector<memAccess_t> mem;
 
-            std::string stringize() const
+            inline void clear()
+            {
+                mem.clear();
+            };
+
+            inline std::string stringize() const
             {
                 std::stringstream ss;
                 ss << std::dec << uid << " -> " << std::hex << pc;
@@ -103,7 +103,7 @@ namespace archXplore
              * SEM_POST         Increment a semaphore
              *
              */
-            enum class EventType_t
+            enum class eventType_t
             {
                 INVALID_EVENT = 0,
                 MUTEX_LOCK = 1,
@@ -124,7 +124,7 @@ namespace archXplore
                 NUM_TYPES,
             };
 
-            EventType_t eventType;
+            eventType_t eventType;
         };
 
         struct threadEvent_t
@@ -171,17 +171,43 @@ namespace archXplore
                 syscallApi_t syscall_api;
                 threadApi_t thread_api;
             };
+
             const Tag tag = Tag::UNDEFINED;
+            eventId_t event_id = 0;
 
-            threadEvent_t(InsnTagType, const instruction_t data) noexcept
-                : instruction(data), tag{Tag::INSTRUCTION} {}
+            threadEvent_t(InsnTagType, const eventId_t id, const instruction_t data) noexcept
+                : instruction(data), tag{Tag::INSTRUCTION}, event_id(id) {}
 
-            threadEvent_t(ThreadApiTagType, const threadApi_t data) noexcept
-                : thread_api(data), tag{Tag::THREAD_API} {}
+            threadEvent_t(ThreadApiTagType, const eventId_t id, const threadApi_t data) noexcept
+                : thread_api(data), tag{Tag::THREAD_API}, event_id(id) {}
 
-            threadEvent_t(InsnTagType, const syscallApi_t data) noexcept
-                : syscall_api(data), tag{Tag::SYSCALL_API} {}
+            threadEvent_t(SyscallApiTagType, const eventId_t id, const syscallApi_t data) noexcept
+                : syscall_api(data), tag{Tag::SYSCALL_API}, event_id(id) {}
+
+            // Copy constructor
+            threadEvent_t(const threadEvent_t &that)
+                : tag(that.tag), event_id(that.event_id)
+            {
+                switch (tag)
+                {
+                case Tag::INSTRUCTION:
+                    new (&instruction) instruction_t(that.instruction);
+                    break;
+                case Tag::THREAD_API:
+                    new (&thread_api) threadApi_t(that.thread_api);
+                    break;
+                case Tag::SYSCALL_API:
+                    new (&syscall_api) syscallApi_t(that.syscall_api);
+                    break;
+                default:
+                    // Handle other cases or throw an exception
+                    break;
+                }
+            }
+
+            ~threadEvent_t(){};
         };
+
 
     } // namespace cpu
 

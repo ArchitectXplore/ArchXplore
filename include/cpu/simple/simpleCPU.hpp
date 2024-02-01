@@ -20,7 +20,7 @@ namespace archXplore
                 simpleCPUParams(sparta::TreeNode *parent)
                     : ParameterSet(parent){};
 
-                PARAMETER(iss::hartId_t, tid, 0, "Thread ID");
+                PARAMETER(hartId_t, tid, 0, "Thread ID");
                 PARAMETER(sparta::Clock::Frequency, frequency, 1000, "CPU frequency")
             };
 
@@ -42,7 +42,7 @@ namespace archXplore
             private:
                 sparta::Event<sparta::SchedulingPhase::Tick> m_insn_exec_event;
                 sparta::Counter m_cycle;
-                sparta::Counter m_inst_retired;
+                sparta::Counter m_instret;
             };
 
         } // namespace simple

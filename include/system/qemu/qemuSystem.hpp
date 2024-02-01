@@ -20,18 +20,14 @@ namespace archXplore
             public:
                 qemuSystem() : m_global_scheduler("GlobalScheduler", getSearchScope()),
                                m_clock_manager(&m_global_scheduler),
-                               m_global_event_set(this),
-                               m_qemu_sync_event(
-                                   &m_global_event_set, "qemuSyncEvent",
-                                   CREATE_SPARTA_HANDLER(qemuSystem, handleSyncEvent))
+                               m_global_event_set(this)
                 {
                     m_qemu_if = iss::qemu::qemuInterface::getInstance();
                 };
-                ~qemuSystem()
-                {
-                };
+                ~qemuSystem(){};
 
-                auto _cleanUp() -> void override {
+                auto _cleanUp() -> void override
+                {
                     m_qemu_if->qemu_shutdown();
                 };
 
@@ -41,8 +37,7 @@ namespace archXplore
                     m_global_clock = m_clock_manager.makeRoot(this, "GlobalClock");
                     setClock(m_global_clock.get());
                     // Setup StartupEvent
-                    sparta::StartupEvent(
-                        &m_global_event_set, CREATE_SPARTA_HANDLER(qemuSystem, waitFirstSyncEvent));
+
                     // Create Individual Clock for each CPU
                     for (auto it : m_cpuInfos)
                     {
@@ -69,43 +64,8 @@ namespace archXplore
                     m_global_scheduler.run(tick, false, false);
                 };
 
-                auto waitFirstSyncEvent() -> void {
-                    while(!m_qemu_if->pendingSyncEvent()){
-                        continue;
-                    }
-                    handleSyncEvent();
-                };
-
-                auto handleSyncEvent() -> void
+                auto _createISS() -> iss::abstractISS::UniquePtr override
                 {
-                    m_qemu_sync_event.schedule(1);
-                    if (m_qemu_if->pendingSyncEvent())
-                    {
-                        auto ev = m_qemu_if->getPendingSyncEvent();
-                        if (ev.event_type == iss::systemSyncEventTypeEnum_t::hartInit)
-                        {
-                            m_qemu_if->removeSyncEvent();
-                            m_cpuInfos[ev.hart_id].cpu->powerOn();
-                        }
-                        else if (ev.event_type == iss::systemSyncEventTypeEnum_t::systemExit)
-                        {
-                            bool can_exit = true;
-                            for (auto cpuInfo : m_cpuInfos) {
-                                auto insnQueue = iss::qemu::qemuInterface::getHartInsnQueuePtr(cpuInfo.first);
-                                if(insnQueue->isEmpty()) {
-                                    cpuInfo.second.cpu->powerOff();
-                                } else {
-                                    can_exit = false;
-                                }
-                            }
-                            if(can_exit) {
-                                m_qemu_sync_event.cancel();
-                            }
-                        }
-                    };
-                };
-
-                auto _createISS() -> iss::abstractISS::UniquePtr override {
                     return std::make_unique<iss::qemu::qemuISS>();
                 }
 
