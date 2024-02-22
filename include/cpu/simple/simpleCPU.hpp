@@ -20,7 +20,6 @@ namespace archXplore
                 simpleCPUParams(sparta::TreeNode *parent)
                     : ParameterSet(parent){};
 
-                PARAMETER(hartId_t, tid, 0, "Thread ID");
                 PARAMETER(sparta::Clock::Frequency, frequency, 1000, "CPU frequency")
             };
 

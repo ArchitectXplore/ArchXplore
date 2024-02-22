@@ -34,7 +34,7 @@ namespace archXplore
             abstractSystem(const abstractSystem &that) = delete;
             abstractSystem &operator=(const abstractSystem &that) = delete;
 
-            abstractSystem() : RootTreeNode("System")
+            abstractSystem() : RootTreeNode("System"), m_cpu_num(0)
             {
                 g_system_ptr = this;
             };
@@ -61,7 +61,7 @@ namespace archXplore
 
             auto registerISS() -> void
             {
-                for (auto cpuInfo : m_cpuInfos)
+                for (auto cpuInfo : m_cpu_infos)
                 {
                     cpuInfo.second.cpu->setISS(_createISS());
                 }
@@ -69,9 +69,9 @@ namespace archXplore
 
             auto getCPUPtr(const hartId_t &tid) -> cpu::abstractCPU *
             {
-                if (m_cpuInfos.find(tid) != m_cpuInfos.end())
+                if (m_cpu_infos.find(tid) != m_cpu_infos.end())
                 {
-                    return m_cpuInfos[tid].cpu;
+                    return m_cpu_infos[tid].cpu;
                 }
                 else
                 {
@@ -85,24 +85,23 @@ namespace archXplore
                 return g_system_ptr;
             };
 
+            auto getCpuNumber() -> hartId_t {
+                return m_cpu_num;
+            };
+
             virtual auto addCPU(cpu::abstractCPU *cpu, const hartId_t &tid, const sparta::Clock::Frequency &freq) -> void
             {
                 sparta_assert((cpu != nullptr));
-                if (m_cpuInfos.find(tid) == m_cpuInfos.end())
-                {
-                    m_cpuInfos[tid] = {freq, cpu};
-                }
-                else
-                {
-                    sparta_throw("CPUs must have different hart id!");
-                }
+                m_cpu_infos[tid] = {freq, cpu};
+                m_cpu_num++;
             };
 
         public:
             std::mutex m_system_lock;
 
         protected:
-            processorInfoMap_t m_cpuInfos;
+            hartId_t m_cpu_num;
+            processorInfoMap_t m_cpu_infos;
         };
 
     } // namespace system

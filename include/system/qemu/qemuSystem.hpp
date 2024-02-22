@@ -33,7 +33,7 @@ namespace archXplore
                     m_global_clock = m_clock_manager.makeRoot(this, "GlobalClock");
                     setClock(m_global_clock.get());
                     // Create Individual Clock for each CPU
-                    for (auto it : m_cpuInfos)
+                    for (auto it : m_cpu_infos)
                     {
                         const std::string clock_name = "CPU" + std::to_string(it.first) + "Clock";
                         const sparta::Clock::Frequency freq = it.second.freq;

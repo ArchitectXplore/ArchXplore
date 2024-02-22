@@ -12,7 +12,7 @@ namespace archXplore
             const char *simpleCPU::name = "simpleCPU";
 
             simpleCPU::simpleCPU(sparta::TreeNode *tn, const simpleCPUParams *params)
-                : abstractCPU(tn, params->tid, params->frequency),
+                : abstractCPU(tn, params->frequency),
                   m_insn_exec_event(&unit_event_set_, "InsnExecutionEvent",
                                     CREATE_SPARTA_HANDLER(simpleCPU, exec)),
                   m_cycle(&unit_stat_set_, "cycle", "CPU runtime in cycle",

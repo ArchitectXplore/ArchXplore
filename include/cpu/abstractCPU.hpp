@@ -41,7 +41,7 @@ namespace archXplore
             abstractCPU(const abstractCPU &that) = delete;
             abstractCPU &operator=(const abstractCPU &that) = delete;
 
-            abstractCPU(sparta::TreeNode *tn, const hartId_t &tid, const sparta::Clock::Frequency &freq);
+            abstractCPU(sparta::TreeNode *tn, const sparta::Clock::Frequency &freq);
 
             ~abstractCPU();
 

@@ -14,8 +14,6 @@ system = system.qemuSystem()
 
 system.cpu = simpleCPU(system)
 
-system.cpu.Params.tid = 0
-
 system.cpu.Params.frequency = 1000
 
 system.build()
