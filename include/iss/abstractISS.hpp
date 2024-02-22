@@ -31,9 +31,11 @@ namespace archXplore
 
             ~abstractISS(){};
 
-            virtual auto generateFetchRequest(bool &enable_fetch) -> void = 0;
+            virtual auto generateFetchRequest() -> sparta::SpartaSharedPointer<cpu::instruction_t> = 0;
 
-            virtual auto receiveFetchResponse(instPtrBlock &insn_block) -> void = 0;
+            // virtual auto receiveFetchResponse(instPtrBlock &insn_block) -> void = 0;
+
+            virtual auto readyToPowerOn() -> bool {return true;};
 
             virtual auto init() -> void = 0;
 

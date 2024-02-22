@@ -16,6 +16,7 @@ std::thread* m_qemu_thread = nullptr;
 std::mutex m_qemu_lock;
 std::shared_mutex m_qemu_sync_lock;
 std::condition_variable m_qemu_cond;
+bool m_simulation_done = false;
 // QEMU status
 std::atomic<eventId_t> m_qemu_sync_event_id = 0;
 // Hart event Queue

@@ -47,10 +47,18 @@ namespace archXplore
 
             virtual auto reset() -> void = 0;
 
-            virtual auto cleanUp() -> void{};
-
-            virtual auto tick() -> void {
-                m_cycle++;
+            auto wakeUpMonitor() -> void
+            {
+                // InActivate State
+                if ((!isRunning() && !isCompleted()) && getISSPtr()->readyToPowerOn())
+                {
+                    m_status = cpu::cpuStatus_t::ACTIVE;
+                    this->reset();
+                }
+                else
+                {
+                    m_wakeup_monitor_event.schedule(10000);
+                }
             };
 
             auto isRunning() const -> bool
@@ -96,6 +104,7 @@ namespace archXplore
         private:
             // ISS Ptr
             iss::abstractISS::UniquePtr m_iss;
+            sparta::Event<sparta::SchedulingPhase::Update> m_wakeup_monitor_event;
         };
 
     } // namespace iss

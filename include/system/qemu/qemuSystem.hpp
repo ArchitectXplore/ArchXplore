@@ -19,15 +19,11 @@ namespace archXplore
             {
             public:
                 qemuSystem() : m_global_scheduler("GlobalScheduler", getSearchScope()),
-                               m_clock_manager(&m_global_scheduler),
-                               m_global_event_set(this)
+                               m_clock_manager(&m_global_scheduler)
                 {
                     m_qemu_if = iss::qemu::qemuInterface::getInstance();
                 };
-                ~qemuSystem(){};
-
-                auto _cleanUp() -> void override
-                {
+                ~qemuSystem(){
                     m_qemu_if->qemu_shutdown();
                 };
 
@@ -36,8 +32,6 @@ namespace archXplore
                     // Create Global Clock
                     m_global_clock = m_clock_manager.makeRoot(this, "GlobalClock");
                     setClock(m_global_clock.get());
-                    // Setup StartupEvent
-
                     // Create Individual Clock for each CPU
                     for (auto it : m_cpuInfos)
                     {
@@ -74,10 +68,6 @@ namespace archXplore
                 sparta::Scheduler m_global_scheduler;
                 sparta::ClockManager m_clock_manager;
                 sparta::Clock::Handle m_global_clock;
-                // Sparta Global Event Set
-                sparta::EventSet m_global_event_set;
-                // QEMU System Sync Event
-                sparta::Event<sparta::SchedulingPhase::Update> m_qemu_sync_event;
                 // QEMU Interface Instance
                 iss::qemu::qemuInterface::ptrType m_qemu_if;
             };

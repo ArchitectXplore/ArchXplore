@@ -6,7 +6,7 @@ import time
 
 qemu_boot_args = ['QEMU', 
                   "-plugin", 
-                  "/home/lzhang/ArchXplore/build_debug/libqemuInterface_plugin.so", 
+                  "/home/lzhang/ArchXplore/build/libqemuInterface_plugin.so", 
                   "/home/lzhang/ArchXplore/tests/qemuInterface/hello"
                   ]
 
@@ -31,6 +31,4 @@ system.run()
 end = time.perf_counter()
 
 print(end-start)
-
-system.cleanUp()
 

@@ -47,8 +47,6 @@ namespace archXplore
 
             virtual auto _createISS() -> iss::abstractISS::UniquePtr = 0;
 
-            virtual auto _cleanUp() -> void{};
-
             auto build() -> void
             {
                 _build();
@@ -59,15 +57,6 @@ namespace archXplore
             auto run(sparta::Scheduler::Tick tick) -> void
             {
                 _run(tick);
-            };
-
-            auto cleanUp() -> void
-            {
-                for (auto cpuInfo : m_cpuInfos)
-                {
-                    cpuInfo.second.cpu->cleanUp();
-                }
-                _cleanUp();
             };
 
             auto registerISS() -> void

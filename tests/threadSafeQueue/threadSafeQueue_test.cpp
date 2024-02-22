@@ -33,7 +33,7 @@ void consumerThreadFunc(){
     for (size_t i = 0; i < numElements; i += batchSize)
     {
         std::deque<uint64_t> batchValues;
-        buffer.popBatch(batchValues, batchSize);
+        buffer.popBatch(batchValues);
     }
 };
 

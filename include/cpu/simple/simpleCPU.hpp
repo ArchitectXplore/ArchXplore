@@ -33,8 +33,6 @@ namespace archXplore
 
                 auto reset() -> void override;
 
-                auto cleanUp() -> void override;
-
                 auto exec() -> void;
 
                 static const char *name;

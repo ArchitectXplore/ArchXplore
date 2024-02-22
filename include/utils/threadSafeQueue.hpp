@@ -13,7 +13,7 @@ namespace archXplore
         {
         public:
             // Constructor
-            threadSafeQueue() : m_producer_exited(false){};
+            threadSafeQueue() : m_producer_exited(false), m_producing(true){};
 
             // Destructor
             ~threadSafeQueue() = default;
@@ -29,11 +29,15 @@ namespace archXplore
             // Enqueue a batch of elements
             auto pushBatch(const std::deque<T> &values) -> void
             {
-                std::lock_guard<std::mutex> lock(m_mutex);
+                std::unique_lock<std::mutex> lock(m_mutex);
+                // Wait until the queue has enough elements
+                m_condition.wait(lock, [this]
+                                 { return m_producing; });
                 for (const T &value : values)
                 {
                     m_queue.push(value);
                 }
+                m_producing = false;
                 m_condition.notify_one();
             };
 
@@ -50,18 +54,38 @@ namespace archXplore
             };
 
             // Dequeue a batch of elements
-            auto popBatch(std::deque<T> &values, std::size_t batch_size) -> void
+            auto popBatch(std::deque<T> &values) -> void
             {
                 std::unique_lock<std::mutex> lock(m_mutex);
                 // Wait until the queue has enough elements
-                m_condition.wait(lock, [this, batch_size]
-                                 { return m_producer_exited || (m_queue.size() >= batch_size); });
-
-                for (std::size_t i = 0; (i < batch_size) && !m_queue.empty(); ++i)
+                m_condition.wait(lock, [this]
+                                 { return !m_producing; });
+                for (std::size_t i = 0; !m_queue.empty(); ++i)
                 {
                     values.push_back(m_queue.front());
                     m_queue.pop();
                 }
+                m_producing = !m_producer_exited;
+                m_condition.notify_one();
+            };
+
+            // Try dequeue a batch of elements
+            auto tryPopBatch(std::deque<T> &values) -> bool
+            {
+                std::unique_lock<std::mutex> lock(m_mutex);
+                // Wait until the queue has enough elements
+                if (m_producing)
+                    return false;
+
+                for (std::size_t i = 0; !m_queue.empty(); ++i)
+                {
+                    values.push_back(m_queue.front());
+                    m_queue.pop();
+                }
+                m_producing = !m_producer_exited;
+                m_condition.notify_one();
+
+                return true;
             };
 
             // Producer doesn't produce data anymore
@@ -84,6 +108,8 @@ namespace archXplore
             std::queue<T> m_queue;
             std::mutex m_mutex;
             std::condition_variable m_condition;
+            // Batch mode ping-pong condition
+            bool m_producing;
         };
     } // namespace utils
 } // namespace archXplore

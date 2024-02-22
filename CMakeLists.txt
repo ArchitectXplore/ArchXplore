@@ -13,7 +13,7 @@ set(CMAKE_C_COMPILER ${CC})
 set(CMAKE_CXX_COMPILER ${CXX})
 
 # Reset CMAKE_CXX_FLAGS
-set(CMAKE_CXX_FLAGS "")
+set(CMAKE_CXX_FLAGS "-g")
 
 # Default Build Option -> Debug/Release
 if(NOT CMAKE_BUILD_TYPE)

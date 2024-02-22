@@ -23,7 +23,7 @@ namespace archXplore
             {
                 return nullptr;
             };
-            auto addCPU(cpu::abstractCPU *cpu, const iss::hartId_t &tid,
+            auto addCPU(cpu::abstractCPU *cpu, const hartId_t &tid,
                         const sparta::Clock::Frequency &freq) -> void override{};
         };
 

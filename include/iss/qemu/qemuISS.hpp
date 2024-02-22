@@ -17,46 +17,41 @@ namespace archXplore
                 qemuISS() = default;
                 ~qemuISS() = default;
 
-                // auto receiveInstruction(cpu::instruction_t &insn) -> void override
-                // {
-                //     insn = sparta::allocate_sparta_shared_pointer<cpu::instruction_t>(m_insn_allocator, m_insn_queue->pop());
-                // };
+                auto readyToPowerOn() -> bool override 
+                {
+                    return m_event_queue->peek();
+                };
 
-                auto generateFetchRequest(bool &enable_fetch) -> void override{
+                auto generateFetchRequest() -> sparta::SpartaSharedPointer<cpu::instruction_t> override
+                {
                     auto cpu = getCPUPtr();
                     // Update cpu status
                     auto ev = m_event_queue->front();
-                    if(__glibc_unlikely(ev.tag == ev.ThreadApiTag || ev.tag == ev.SyscallApiTag)){
-                        handleEvent(ev);
+                    // Instruction Ptr
+                    sparta::SpartaSharedPointer<cpu::instruction_t> insn;
+                    // Continue flag
+                    bool continue_flag = true;
+                    while (continue_flag)
+                    {
+                        if (ev.tag == ev.SyscallApiTag)
+                        {
+                            handleSyscallApi(ev.event_id, ev.syscall_api);
+                        }
+                        else if (ev.tag == ev.ThreadApiTag)
+                        {
+                            handleThreadApi(ev.event_id, ev.thread_api);
+                        }
+                        else
+                        {
+                            insn = sparta::allocate_sparta_shared_pointer<cpu::instruction_t>(m_insn_allocator, ev.instruction);
+                            continue_flag = false;
+                        }
+                        m_event_queue->pop();
                     }
-                    enable_fetch = true;
-                    if(!cpu->isRunning() || cpu->isBlocked() || cpu->isCompleted()) {
-                        enable_fetch = false;
-                    }
-                };
-
-                auto receiveFetchResponse(instPtrBlock &insn_block) -> void override{
-                    auto insn = sparta::allocate_sparta_shared_pointer<cpu::instruction_t>(m_insn_allocator, m_insn_queue->pop());
+                    return insn;
                 };
 
             protected:
-                auto handleEvent(const cpu::threadEvent_t &ev) -> void
-                {
-                    switch (ev.tag)
-                    {
-                    case ev.SyscallApiTag:
-                        handleSyscallApi(ev.event_id, ev.syscall_api);
-                        break;
-                    case ev.ThreadApiTag:
-                        handleThreadApi(ev.event_id, ev.thread_api);
-                        break;
-                    default:
-                        return;
-                        break;
-                    }
-                    m_event_queue->pop();
-                };
-
                 auto handleThreadApi(const eventId_t &id, const cpu::threadApi_t &api) -> void
                 {
                     auto cpu = getCPUPtr();

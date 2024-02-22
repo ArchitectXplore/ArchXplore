@@ -17,7 +17,6 @@ namespace archXplore
                 .def("run", &abstractSystem::run)
                 .def("run", [](abstractSystem& self){self.run(-1);})
                 .def("build", &abstractSystem::build)
-                .def("cleanUp", &abstractSystem::cleanUp)
                 ;
 
             pybind11::class_<qemu::qemuSystem, abstractSystem>(system, "qemuSystem", pybind11::dynamic_attr())

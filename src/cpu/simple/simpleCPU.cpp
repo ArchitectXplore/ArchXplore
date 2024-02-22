@@ -27,26 +27,24 @@ namespace archXplore
                 exec();
             };
 
-            auto simpleCPU::cleanUp() -> void
-            {
-                info_logger_ << m_cycle;
-                info_logger_ << m_instret;
-            };
-
             auto simpleCPU::exec() -> void
             {
-                if (isRunning())
+                auto iss = getISSPtr();
+                auto insn = iss->generateFetchRequest();
+                // debug_logger_ << "Execute Instruction -> "
+                //               << "uid[" << std::dec << insn->uid << "], "
+                //               << "pc[" << std::hex << insn->pc << "], "
+                //               << "opcode[" << std::hex << insn->opcode << "]" << std::endl;
+                m_instret++;
+                m_cycle++;
+                if (!insn->is_last)
                 {
-                    isa::traceInsnPtr_t insn;
-                    auto iss = getISSPtr();
-                    iss->receiveInstruction(insn);
-                    debug_logger_ << "Execute Instruction -> "
-                                  << "uid[" << std::dec << insn->uid << "], "
-                                  << "pc[" << std::hex << insn->pc << "], "
-                                  << "opcode[" << std::hex << insn->opcode << "]" << std::endl;
-                    m_inst_retired++;
-                    m_cycle++;
                     m_insn_exec_event.schedule(1);
+                }
+                else
+                {
+                    info_logger_ << m_cycle;
+                    info_logger_ << m_instret;
                 }
             };
 

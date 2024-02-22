@@ -16,7 +16,6 @@ extern "C"
 #include "types.hpp"
 #include "cpu/threadEvent.hpp"
 #include "utils/threadSafeQueue.hpp"
-#include "system/abstractSystem.hpp"
 
 #define MAX_HART 128
 
@@ -41,6 +40,7 @@ namespace archXplore
             // QEMU operation mutex
             extern std::mutex m_qemu_lock;
             extern std::condition_variable m_qemu_cond;
+            extern bool m_simulation_done;
             // Instruction Queue
             extern hartEventQueue *m_qemu_event_queue[MAX_HART];
 
@@ -66,26 +66,51 @@ namespace archXplore
                 ~hartEventQueue() = default;
 
             public:
+                // Non-blocking one compared to front()
+                auto peek() -> bool
+                {
+                    if (m_local_pop_event_buffer.size() == 0)
+                    {
+                        m_thread_event_queue.tryPopBatch(m_local_pop_event_buffer);
+                        return (m_local_pop_event_buffer.size() > 0);
+                    }
+                    else
+                    {
+                        return true;
+                    }
+                };
                 auto front() -> cpu::threadEvent_t &
                 {
-                    if (__glibc_unlikely(m_local_pop_event_buffer.size() == 0))
+                    if (!m_local_pop_event_buffer.size())
                     {
-                        syncPopBuffer();
+                        m_thread_event_queue.popBatch(m_local_pop_event_buffer);
                     }
                     return m_local_pop_event_buffer.front();
                 };
                 auto pop() -> void
                 {
+                    if (!m_local_pop_event_buffer.size())
+                    {
+                        m_thread_event_queue.popBatch(m_local_pop_event_buffer);
+                    }
                     m_local_pop_event_buffer.pop_front();
                 };
 
             protected:
                 friend class qemuInterface;
-                auto inline sendLastInsn() -> void
+                auto inline sendLastInsn(bool is_last = false) -> void
                 {
-                    m_local_push_event_buffer.emplace_back(cpu::threadEvent_t::InsnTag, m_event_id,
+                    // Set last instruction flag
+                    m_last_exec_insn->is_last = is_last;
+                    // push instruction
+                    m_local_push_event_buffer.emplace_back(cpu::threadEvent_t::InsnTag, fetchAddEventId(m_event_id),
                                                            *m_last_exec_insn);
                     m_last_exec_insn->clear();
+                    // Push to thread queue
+                    if (is_last || m_local_push_event_buffer.size() == m_buffer_size)
+                    {
+                        m_thread_event_queue.pushBatch(m_local_push_event_buffer);
+                    }
                 };
                 auto executeCallback(const addr_t &pc,
                                      const opcode_t &opcode, const uint8_t &len) -> void
@@ -97,7 +122,7 @@ namespace archXplore
                     else
                     {
                         m_last_exec_insn->br_info.target_pc = pc;
-                        sendLastInsn();
+                        sendLastInsn(false);
                     }
                     m_last_exec_insn->uid = fetchAddEventId(m_insn_uid);
                     m_last_exec_insn->pc = pc;
@@ -110,44 +135,17 @@ namespace archXplore
                 };
                 auto initCallback() -> void
                 {
-                    auto system = system::abstractSystem::getSystemPtr();
-                    auto cpu = system->getCPUPtr(m_hart_id);
-                    std::lock_guard<std::mutex> lock(system->m_system_lock);
-                    {
-                        cpu->m_status = cpu::cpuStatus_t::ACTIVE;
-                        cpu->m_cycle = 0;
-                        cpu->m_instret = 0;
-                    }
                 };
                 auto exitCallback() -> void
                 {
-                    // Set last instruciton flag
-                    m_last_exec_insn->is_last = true;
                     // Send last instruction in buffer
-                    sendLastInsn();
-                    // Sync push buffer
-                    syncPushBuffer(true);
+                    sendLastInsn(true);
                 };
                 inline auto fetchAddEventId(eventId_t &id) -> eventId_t
                 {
                     auto cur_id = id;
                     id = id + 1;
                     return cur_id;
-                };
-                inline auto syncPushBuffer(const bool &force = false) -> void
-                {
-                    // When buffer full, clear all elements to
-                    if ((m_local_push_event_buffer.size() == m_buffer_size) || force)
-                    {
-                        m_thread_event_queue.pushBatch(m_local_push_event_buffer);
-                    };
-                };
-                inline auto syncPopBuffer(const bool &force = false) -> void
-                {
-                    if (m_local_pop_event_buffer.size() == 0 || force)
-                    {
-                        m_thread_event_queue.popBatch(m_local_pop_event_buffer, m_buffer_size);
-                    };
                 };
 
             private:
@@ -239,6 +237,11 @@ namespace archXplore
                 };
                 static auto qemu_shutdown(int exit_code = 0) -> void
                 {
+                    {
+                        std::unique_lock<std::mutex> lock(m_qemu_lock);
+                        m_simulation_done = true;
+                        m_qemu_cond.notify_one();
+                    }
                     qemu_plugin_shutdown(exit_code);
                     qemuThreadJoin();
                 };
@@ -254,6 +257,13 @@ namespace archXplore
                         {
                             break;
                         }
+                    }
+                    // Wait kill signal
+                    {
+                        std::unique_lock<std::mutex> lock(m_qemu_lock);
+                        m_qemu_cond.wait(lock, []{
+                            return m_simulation_done;
+                        });
                     }
                 };
                 static auto qemu_vcpu_tb_trans(qemu_plugin_id_t id, qemu_plugin_tb *tb) -> void
