@@ -44,9 +44,6 @@ include(cmake/sparta.cmake)
 # QEMU setup
 include(cmake/qemu.cmake)
 
-# GEM5 setup
-include(cmake/gem5.cmake)
-
 # Add Source Directory
 add_subdirectory(src)
 
@@ -61,7 +58,7 @@ add_executable(main src/python/archXplorePy.cpp ${ArchXplore_SRCS})
 target_include_directories(main PUBLIC ${ArchXplore_INCLUDES})
 target_link_libraries(main PRIVATE ${ArchXplore_LIBS} qemuInterface_plugin)
 set_target_properties(main PROPERTIES POSITION_INDEPENDENT_CODE ON)
-add_dependencies(main qemu gem5)
+add_dependencies(main qemu)
 
 # Generate Python Stubs
 add_custom_command(TARGET main POST_BUILD
