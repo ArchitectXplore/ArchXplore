@@ -12,6 +12,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_C_COMPILER ${CC})
 set(CMAKE_CXX_COMPILER ${CXX})
 
+# Reset CMAKE_CXX_FLAGS
+set(CMAKE_CXX_FLAGS "-g")
+
 # Default Build Option -> Debug/Release
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build (Debug/Release)" FORCE)
@@ -19,8 +22,6 @@ endif()
 
 # Build QEMU User Mode 
 add_definitions(-DCONFIG_USER_ONLY)
-
-message("Build type: ${CMAKE_BUILD_TYPE}")
 
 set(ArchXplore_BASE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -43,6 +44,9 @@ include(cmake/sparta.cmake)
 # QEMU setup
 include(cmake/qemu.cmake)
 
+# GEM5 setup
+include(cmake/gem5.cmake)
+
 # Add Source Directory
 add_subdirectory(src)
 
@@ -51,11 +55,13 @@ add_library(qemuInterface_plugin SHARED src/iss/qemu/qemuInterface.cpp)
 target_include_directories(qemuInterface_plugin PUBLIC ${ArchXplore_INCLUDES})
 target_link_libraries(qemuInterface_plugin PRIVATE ${ArchXplore_LIBS})
 
+
 # Main
 add_executable(main src/python/archXplorePy.cpp ${ArchXplore_SRCS})
 target_include_directories(main PUBLIC ${ArchXplore_INCLUDES})
 target_link_libraries(main PRIVATE ${ArchXplore_LIBS} qemuInterface_plugin)
-add_dependencies(main qemu)
+set_target_properties(main PROPERTIES POSITION_INDEPENDENT_CODE ON)
+add_dependencies(main qemu gem5)
 
 # Generate Python Stubs
 add_custom_command(TARGET main POST_BUILD

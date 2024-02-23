@@ -12,18 +12,15 @@ namespace archXplore
             const char *simpleCPU::name = "simpleCPU";
 
             simpleCPU::simpleCPU(sparta::TreeNode *tn, const simpleCPUParams *params)
-                : abstractCPU(
-                      tn,
-                      params->tid,
-                      params->frequency),
+                : abstractCPU(tn, params->frequency),
                   m_insn_exec_event(&unit_event_set_, "InsnExecutionEvent",
-                                    CREATE_SPARTA_HANDLER(simpleCPU, exec)){
+                                    CREATE_SPARTA_HANDLER(simpleCPU, exec)),
+                  m_cycle(&unit_stat_set_, "cycle", "CPU runtime in cycle",
+                          sparta::CounterBase::CounterBehavior::COUNT_NORMAL),
+                  m_instret(&unit_stat_set_, "instret", "Counter of retired instructions",
+                            sparta::CounterBase::CounterBehavior::COUNT_NORMAL){};
 
-                  };
-
-            simpleCPU::~simpleCPU(){
-
-            };
+            simpleCPU::~simpleCPU(){};
 
             auto simpleCPU::reset() -> void
             {
@@ -32,17 +29,22 @@ namespace archXplore
 
             auto simpleCPU::exec() -> void
             {
-                if (isRunning())
+                auto iss = getISSPtr();
+                auto insn = iss->generateFetchRequest();
+                // debug_logger_ << "Execute Instruction -> "
+                //               << "uid[" << std::dec << insn->uid << "], "
+                //               << "pc[" << std::hex << insn->pc << "], "
+                //               << "opcode[" << std::hex << insn->opcode << "]" << std::endl;
+                m_instret++;
+                m_cycle++;
+                if (!insn->is_last)
                 {
-                    isa::traceInsnPtr_t insn;
-                    auto iss = getISSPtr();
-                    iss->receiveInstruction(insn);
-                    info_logger_ << "Execute Instruction -> "
-                                 << "uid[" << std::dec << insn->uid << "], "
-                                 << "pc[" << std::hex << insn->pc << "], "
-                                 << "opcode[" << std::hex << insn->opcode << "]" << std::endl;
-
                     m_insn_exec_event.schedule(1);
+                }
+                else
+                {
+                    info_logger_ << m_cycle;
+                    info_logger_ << m_instret;
                 }
             };
 

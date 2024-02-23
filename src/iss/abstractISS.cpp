@@ -5,10 +5,10 @@ namespace archXplore
 {
     namespace iss
     {
-        auto abstractISS::init(cpu::abstractCPU *cpu) -> void
+        auto abstractISS::setCPU(cpu::abstractCPU *cpu) -> void
         {
             m_cpu = cpu;
-            _init();
+            init();
         };
     }
 }

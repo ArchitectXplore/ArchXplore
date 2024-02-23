@@ -15,9 +15,9 @@ namespace archXplore
 
             pybind11::class_<abstractSystem, sparta::RootTreeNode>(system, "__abstractSystem", pybind11::dynamic_attr())
                 .def("run", &abstractSystem::run)
-                .def("run", [](abstractSystem &self)
-                     { self.run(-1); })
-                .def("build", &abstractSystem::build);
+                .def("run", [](abstractSystem& self){self.run(-1);})
+                .def("build", &abstractSystem::build)
+                ;
 
             pybind11::class_<qemu::qemuSystem, abstractSystem>(system, "qemuSystem", pybind11::dynamic_attr())
                 .def(pybind11::init<>())

@@ -2,24 +2,31 @@ import archXplore
 from archXplore import *
 
 import sys
+import time
 
 qemu_boot_args = ['QEMU', 
                   "-plugin", 
                   "/home/lzhang/ArchXplore/build/libqemuInterface_plugin.so", 
-                  "/home/lzhang/ArchXplore/tests/qemuInterface/hello"]
+                #   "/home/lzhang/ArchXplore/tests/qemuInterface/hello"
+                  "/home/lzhang/pthread_test_riscv"
+                  ]
 
 system = system.qemuSystem()
 
-system.cpu = simpleCPU(system)
-
-system.cpu.Params.tid = 0
-
-system.cpu.Params.frequency = 1000
+system.cpus = [simpleCPU(system, "simpleCPU" + str(i)) for i in range(3)]
 
 system.build()
     
 system.boot(qemu_boot_args)
 
-system.attachTap("info", sys.stdout)
+for cpu in system.cpus : 
+    cpu.attachTap("info", sys.stdout)
 
-system.run(1000)
+start = time.perf_counter()
+
+system.run()
+
+end = time.perf_counter()
+
+print(end-start)
+

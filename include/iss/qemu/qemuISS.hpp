@@ -14,22 +14,72 @@ namespace archXplore
             class qemuISS : public abstractISS
             {
             public:
-                qemuISS(){};
-                ~qemuISS(){};
+                qemuISS() = default;
+                ~qemuISS() = default;
 
-                auto _init() -> void override
+                auto readyToPowerOn() -> bool override
                 {
-                    m_insn_queue = qemuInterface::getHartInsnQueuePtr(
+                    return m_event_queue->isInitted();
+                };
+
+                auto readyToPowerOff() -> bool override
+                {
+                    return m_event_queue->isCompleted();
+                };
+
+                auto generateFetchRequest() -> sparta::SpartaSharedPointer<cpu::instruction_t> override
+                {
+                    auto cpu = getCPUPtr();
+                    // Update cpu status
+                    auto ev = m_event_queue->front();
+                    // Instruction Ptr
+                    sparta::SpartaSharedPointer<cpu::instruction_t> insn;
+                    // Continue flag
+                    bool continue_flag = true;
+                    while (continue_flag)
+                    {
+                        if (ev.tag == ev.SyscallApiTag)
+                        {
+                            handleSyscallApi(ev.event_id, ev.syscall_api);
+                        }
+                        else if (ev.tag == ev.ThreadApiTag)
+                        {
+                            handleThreadApi(ev.event_id, ev.thread_api);
+                        }
+                        else
+                        {
+                            insn = sparta::allocate_sparta_shared_pointer<cpu::instruction_t>(m_insn_allocator, ev.instruction);
+                            continue_flag = false;
+                        }
+                        m_event_queue->pop();
+                    }
+                    return insn;
+                };
+
+            protected:
+                auto handleThreadApi(const eventId_t &id, const cpu::threadApi_t &api) -> void
+                {
+                    auto cpu = getCPUPtr();
+                    switch (api.eventType)
+                    {
+                    default:
+                        break;
+                    }
+                };
+
+                auto handleSyscallApi(const eventId_t &id, const cpu::syscallApi_t &api) -> void
+                {
+                    return;
+                };
+
+                auto init() -> void override
+                {
+                    m_event_queue = qemuInterface::getHartEventQueuePtr(
                         m_cpu->getThreadID());
                 };
 
-                void receiveInstruction(isa::traceInsnPtr_t &insn) override
-                {
-                    insn = sparta::allocate_sparta_shared_pointer<isa::traceInsn_t>(m_insn_allocator, m_insn_queue->pop());
-                };
-
             private:
-                hartInsnQueue *m_insn_queue;
+                hartEventQueue *m_event_queue;
             };
         }
     } // namespace iss

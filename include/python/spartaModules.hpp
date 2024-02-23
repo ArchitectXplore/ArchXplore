@@ -1,4 +1,4 @@
-#include "python/embeddedModule.hpp"
+
 #include <sparta/sparta.hpp>
 #include <sparta/simulation/Unit.hpp>
 #include <sparta/simulation/TreeNode.hpp>
@@ -7,47 +7,14 @@
 #include <sparta/ports/PortVec.hpp>
 #include <sparta/ports/DataPort.hpp>
 #include <sparta/ports/Port.hpp>
-#include <sparta/log/Tap.hpp>
+
+#include "python/pySpartaLogTap.hpp"
+#include "python/embeddedModule.hpp"
 
 namespace sparta
 {
 
     namespace py = pybind11;
-
-    namespace log
-    {
-        class __attribute__((visibility("hidden"))) PyTap
-        {
-        public:
-            PyTap(TreeNode *node, const std::string *pcategory, std::string &dest)
-                : myBuffer(py::module_::import("sys").attr("stdout")), myStream(nullptr)
-            {
-                myTap = new Tap(node, pcategory, dest);
-            };
-            PyTap(TreeNode *node, const std::string *pcategory, py::object &dest)
-                : myBuffer(dest), myStream(&myBuffer)
-            {
-                myTap = new Tap(node, pcategory, myStream);
-            };
-            ~PyTap()
-            {
-                delete myTap;
-            };
-            void detach()
-            {
-                myTap->detach();
-            };
-            void reset(TreeNode *node)
-            {
-                myTap->reset(node);
-            }
-
-        protected:
-            Tap *myTap;
-            std::ostream myStream;
-            py::detail::pythonbuf myBuffer;
-        };
-    }
 
     void bindSpartaModules(pybind11::module_ &parent)
     {
@@ -59,7 +26,6 @@ namespace sparta
         auto TreeNodeBind = py::class_<TreeNode>(m, "TreeNode", py::dynamic_attr());
 
         py::class_<log::PyTap>(m, "PyLogTap")
-            .def(py::init<TreeNode *, const std::string *, std::string &>())
             .def(py::init<TreeNode *, const std::string *, py::object &>())
             .def("detach", &log::PyTap::detach)
             .def("reset", &log::PyTap::reset);
@@ -279,13 +245,6 @@ namespace sparta
             .def(
                 "attachTap",
                 [](TreeNode &self, const std::string *category, py::object &dest)
-                {
-                    return new log::PyTap(&self, category, dest);
-                },
-                py::return_value_policy::reference)
-            .def(
-                "attachTap",
-                [](TreeNode &self, const std::string *category, std::string &dest)
                 {
                     return new log::PyTap(&self, category, dest);
                 },
