@@ -54,11 +54,12 @@ namespace archXplore
                 {
                     m_status = cpu::cpuStatus_t::ACTIVE;
                     this->reset();
+                    return;
                 }
-                else
-                {
-                    m_wakeup_monitor_event.schedule(10000);
+                else if((!isRunning() || isCompleted()) && getISSPtr()->readyToPowerOff()) {
+                    return;
                 }
+                m_wakeup_monitor_event.schedule(10000);
             };
 
             auto isRunning() const -> bool

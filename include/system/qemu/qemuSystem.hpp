@@ -60,6 +60,7 @@ namespace archXplore
 
                 auto _createISS() -> iss::abstractISS::UniquePtr override
                 {
+                    iss::qemu::m_simulated_cpu_number++;
                     return std::make_unique<iss::qemu::qemuISS>();
                 }
 

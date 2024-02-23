@@ -17,9 +17,14 @@ namespace archXplore
                 qemuISS() = default;
                 ~qemuISS() = default;
 
-                auto readyToPowerOn() -> bool override 
+                auto readyToPowerOn() -> bool override
                 {
-                    return m_event_queue->peek();
+                    return m_event_queue->isInitted();
+                };
+
+                auto readyToPowerOff() -> bool override
+                {
+                    return m_event_queue->isCompleted();
                 };
 
                 auto generateFetchRequest() -> sparta::SpartaSharedPointer<cpu::instruction_t> override
@@ -57,11 +62,6 @@ namespace archXplore
                     auto cpu = getCPUPtr();
                     switch (api.eventType)
                     {
-                    case cpu::threadApi_t::eventType_t::THREAD_CREATE:
-                        cpu->m_status = cpu::cpuStatus_t::ACTIVE;
-                        cpu->m_cycle = 0;
-                        cpu->m_instret = 0;
-                        break;
                     default:
                         break;
                     }

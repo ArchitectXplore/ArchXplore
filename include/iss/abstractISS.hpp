@@ -37,6 +37,8 @@ namespace archXplore
 
             virtual auto readyToPowerOn() -> bool {return true;};
 
+            virtual auto readyToPowerOff() -> bool {return true;};
+
             virtual auto init() -> void = 0;
 
             auto getCPUPtr() -> cpu::abstractCPU *
