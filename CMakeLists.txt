@@ -35,11 +35,11 @@ set(ArchXplore_SRCS "")
 include(cmake/buildMacro.cmake)
 include(ExternalProject)
 
-# Pybind11 setup
-include(cmake/pybind11.cmake)
-
 # Sparta setup
 include(cmake/sparta.cmake)
+
+# Pybind11 setup
+include(cmake/pybind11.cmake)
 
 # QEMU setup
 include(cmake/qemu.cmake)

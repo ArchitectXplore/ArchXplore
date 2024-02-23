@@ -1,8 +1,6 @@
 
 # PYBIND11 as an External Project
 # ===========================
-set(PYBIND11_DIR "${ArchXplore_BASE}/ext/pybind11")
-
 # Set up python
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
