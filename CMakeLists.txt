@@ -51,7 +51,7 @@ add_subdirectory(src)
 add_library(qemuInterface_plugin SHARED src/iss/qemu/qemuInterface.cpp)
 target_include_directories(qemuInterface_plugin PUBLIC ${ArchXplore_INCLUDES})
 target_link_libraries(qemuInterface_plugin PRIVATE ${ArchXplore_LIBS})
-
+add_dependencies(qemuInterface_plugin qemu)
 
 # Main
 add_executable(main src/python/archXplorePy.cpp ${ArchXplore_SRCS})
