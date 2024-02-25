@@ -23,7 +23,8 @@ namespace archXplore
                 {
                     m_qemu_if = iss::qemu::qemuInterface::getInstance();
                 };
-                ~qemuSystem(){
+                ~qemuSystem()
+                {
                     m_qemu_if->qemu_shutdown();
                 };
 
@@ -48,13 +49,37 @@ namespace archXplore
                     m_global_scheduler.finalize();
                 };
 
+                auto boot() -> void
+                {
+                    // Plugin library path
+                    std::string plugin_path = executablePath() + "/libqemuInterface_plugin.so";
+
+                    // Simulating command-line arguments
+                    std::vector<std::string> args = {"QEMU", "-plugin", plugin_path, m_workload_path};
+
+                    // Create argc and argv
+                    int argc = static_cast<int>(args.size());
+                    char **argv = new char *[argc];
+
+                    for (int i = 0; i < argc; ++i)
+                    {
+                        argv[i] = new char[args[i].size() + 1];
+                        std::strcpy(argv[i], args[i].c_str());
+                    }
+
+                    // Your program logic goes here...
+                    boot({argc, argv, nullptr});
+                }
+
                 auto boot(const iss::qemu::qemuArgs_t &args) -> void
                 {
+                    // Your program logic goes here...
                     m_qemu_if->bootQemuThread(args);
                 };
 
                 auto _run(sparta::Scheduler::Tick tick) -> void override
                 {
+                    boot();
                     m_global_scheduler.run(tick, false, false);
                 };
 
@@ -70,6 +95,7 @@ namespace archXplore
                 sparta::ClockManager m_clock_manager;
                 sparta::Clock::Handle m_global_clock;
                 // QEMU Interface Instance
+
                 iss::qemu::qemuInterface::ptrType m_qemu_if;
             };
 

@@ -26,7 +26,6 @@ void produceThreadFunc()
         }
         buffer.pushBatch(batchValues);
     }
-    buffer.producerExit();
 };
 
 void consumerThreadFunc(){

@@ -31,10 +31,13 @@ namespace archXplore
             {
                 auto iss = getISSPtr();
                 auto insn = iss->generateFetchRequest();
-                // debug_logger_ << "Execute Instruction -> "
-                //               << "uid[" << std::dec << insn->uid << "], "
-                //               << "pc[" << std::hex << insn->pc << "], "
-                //               << "opcode[" << std::hex << insn->opcode << "]" << std::endl;
+                if (debug_logger_)
+                {
+                    debug_logger_ << "Execute Instruction -> "
+                                  << "uid[" << std::dec << insn->uid << "], "
+                                  << "pc[" << std::hex << insn->pc << "], "
+                                  << "opcode[" << std::hex << insn->opcode << "]" << std::endl;
+                }
                 m_instret++;
                 m_cycle++;
                 if (!insn->is_last)
@@ -43,8 +46,11 @@ namespace archXplore
                 }
                 else
                 {
-                    info_logger_ << m_cycle;
-                    info_logger_ << m_instret;
+                    if (info_logger_)
+                    {
+                        info_logger_ << m_cycle;
+                        info_logger_ << m_instret;
+                    }
                 }
             };
 

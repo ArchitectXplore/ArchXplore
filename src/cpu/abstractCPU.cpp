@@ -15,7 +15,7 @@ namespace archXplore
         {
             getSystemPtr()->addCPU(this, getSystemPtr()->getCpuNumber(), freq);
             sparta::StartupEvent(this->getEventSet(),
-                                 CREATE_SPARTA_HANDLER(abstractCPU, wakeUpMonitor));
+                                 CREATE_SPARTA_HANDLER(abstractCPU, startUpMonitor));
         };
 
         abstractCPU::~abstractCPU(){};

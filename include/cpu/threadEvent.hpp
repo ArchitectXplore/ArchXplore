@@ -13,11 +13,24 @@ namespace archXplore
     {
         struct instruction_t
         {
+            enum dependency_t{
+                NO_DEP, // No dependency
+                RAW, // RAW dependency
+                WAW // WAW dependency  
+            };
+
+            struct dependency_info_t
+            {
+                eventId_t uid;
+                dependency_t type;
+            };
+
             struct memAccess_t
             {
                 addr_t vaddr;
                 // iss::addr_t paddr;
                 uint8_t len;
+                bool is_store;
             };
 
             struct branchInfo_t
@@ -38,10 +51,14 @@ namespace archXplore
             branchInfo_t br_info;
             // Memory Access
             std::vector<memAccess_t> mem;
+            // Data dependency
+            std::vector<dependency_info_t> data_dep;
+            // Memory dependency
+            std::vector<dependency_info_t> mem_dep;
 
             inline void clear()
             {
-                mem.clear();
+                mem.clear(), data_dep.clear(), mem_dep.clear();
             };
 
             inline std::string stringize() const
@@ -204,6 +221,14 @@ namespace archXplore
                     break;
                 }
             }
+
+            threadEvent_t &operator=(const threadEvent_t &that){
+                if (this != &that){
+                    this->~threadEvent_t();
+                    new (this) threadEvent_t(that);
+                }
+                return *this;
+            };
 
             ~threadEvent_t(){};
         };

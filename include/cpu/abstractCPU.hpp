@@ -47,6 +47,17 @@ namespace archXplore
 
             virtual auto reset() -> void = 0;
 
+            auto startUpMonitor() -> void
+            {
+                // Wake up thread 0
+                if(m_tid == 0) {
+                    m_status = cpu::cpuStatus_t::ACTIVE;
+                    this->reset();
+                } else {
+                    m_wakeup_monitor_event.schedule();
+                }
+            }
+
             auto wakeUpMonitor() -> void
             {
                 // InActivate State

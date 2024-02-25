@@ -99,16 +99,12 @@ namespace archXplore
                 };
                 auto pop() -> void
                 {
-                    if (!m_local_pop_event_buffer.size())
-                    {
-                        m_thread_event_queue.popBatch(m_local_pop_event_buffer);
-                    }
                     m_local_pop_event_buffer.pop_front();
                 };
-
+ 
             protected:
                 friend class qemuInterface;
-                auto inline sendLastInsn(bool is_last = false) -> void
+                inline auto sendLastInsn(bool is_last = false) -> void
                 {
                     // Set last instruction flag
                     m_last_exec_insn->is_last = is_last;
@@ -117,12 +113,16 @@ namespace archXplore
                                                            *m_last_exec_insn);
                     m_last_exec_insn->clear();
                     // Push to thread queue
-                    if (is_last || m_local_push_event_buffer.size() == m_buffer_size)
+                    if (is_last || m_local_push_event_buffer.size() >= m_buffer_size)
                     {
-                        m_thread_event_queue.pushBatch(m_local_push_event_buffer);
+                        if(is_last) {
+                            m_thread_event_queue.pushBatch(m_local_push_event_buffer);
+                        } else {
+                            m_thread_event_queue.tryPushBatch(m_local_push_event_buffer);
+                        }
                     }
                 };
-                auto executeCallback(const addr_t &pc,
+                inline auto executeCallback(const addr_t &pc,
                                      const opcode_t &opcode, const uint8_t &len) -> void
                 {
                     if (__glibc_unlikely(m_last_exec_insn == nullptr))
@@ -139,15 +139,34 @@ namespace archXplore
                     m_last_exec_insn->opcode = opcode;
                     m_last_exec_insn->len = len;
                 };
-                auto memoryCallback(const addr_t &vaddr, const uint8_t &len) -> void
+                inline auto memoryCallback(const addr_t &vaddr, const uint8_t &len, const bool &is_store) -> void
                 {
-                    m_last_exec_insn->mem.push_back({vaddr, len});
+                    m_last_exec_insn->mem.push_back({vaddr, len, is_store});
+                    // Construct memory dependency
+                    for (auto addr = vaddr; addr < vaddr + len*8; addr += 8)
+                    {
+                        auto it = m_mem_dep_table.find(addr);
+                        if (it != m_mem_dep_table.end())
+                        {    // Dependency found for this address
+                            if(is_store) {
+                                // Construct WAW dependency
+                                m_last_exec_insn->mem_dep.push_back({it->second, cpu::instruction_t::WAW});
+                            } else {
+                                // Construct RAW dependency
+                                m_last_exec_insn->mem_dep.push_back({it->second, cpu::instruction_t::RAW});
+                            }
+                        }
+                        // Update memory dependency table 
+                        if(is_store) {
+                            m_mem_dep_table[addr] = m_event_id;
+                        }
+                    }
                 };
-                auto initCallback() -> void
+                inline auto initCallback() -> void
                 {
                     m_initted = true;
                 };
-                auto exitCallback() -> void
+                inline auto exitCallback() -> void
                 {
                     if (m_initted)
                     {
@@ -178,6 +197,14 @@ namespace archXplore
                 std::deque<cpu::threadEvent_t> m_local_push_event_buffer;
                 std::deque<cpu::threadEvent_t> m_local_pop_event_buffer;
                 utils::threadSafeQueue<cpu::threadEvent_t> m_thread_event_queue;
+                // Memory dependency table(Per Byte)
+                std::unordered_map<addr_t, eventId_t> m_mem_dep_table;
+                // Integer Register dependency table(Per Register)
+                std::unordered_map<uint8_t, eventId_t> m_int_reg_dep_table;
+                // Float Register dependency table(Per Register)
+                std::unordered_map<uint8_t, eventId_t> m_float_reg_dep_table;
+                // Vector Register dependency table(Per Register)
+                std::unordered_map<uint8_t, eventId_t> m_vec_reg_dep_table;
             };
 
             class qemuInterface
@@ -246,7 +273,9 @@ namespace archXplore
                 /* Instrument functions for QEMU */
                 static auto qemu_vcpu_init(qemu_plugin_id_t id, unsigned int vcpu_index) -> void
                 {
-                    assert(vcpu_index < m_simulated_cpu_number);
+                    if(vcpu_index >= m_simulated_cpu_number) {
+                        throw std::out_of_range("Simulated CPUs are less than vcpu needed by QEMU\n");
+                    }
                     // Resize hart instruction queue
                     auto vcpu_queue = getHartEventQueuePtr(vcpu_index);
                     vcpu_queue->initCallback();
@@ -346,8 +375,9 @@ namespace archXplore
                     const qemu_plugin_hwaddr *haddr = qemu_plugin_get_hwaddr(info, vaddr);
                     // const addr_t paddr = qemu_plugin_hwaddr_phys_addr(haddr);
                     const uint8_t len = qemu_plugin_mem_size_shift(info);
+                    const bool is_store = qemu_plugin_mem_is_store(info);
                     vcpu_queue->memoryCallback(
-                        vaddr, len);
+                        vaddr, len, is_store);
                 };
             };
         };

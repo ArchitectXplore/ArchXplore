@@ -19,14 +19,15 @@ namespace sparta
         public:
             PyTap(TreeNode *node, const std::string *pcategory, py::object &dest)
             {
+                myCategory = new std::string(*pcategory);
                 try {
                     std::string t = dest.cast<std::string>();
-                    myTap = new Tap(node, pcategory, t);
+                    myTap = new Tap(node, myCategory, t);
                 }
                 catch(...){
                     myBuffer = new py::detail::pythonbuf(dest);
                     myStream = new std::ostream(myBuffer);
-                    myTap = new Tap(node, pcategory, *myStream);
+                    myTap = new Tap(node, myCategory, *myStream);
                 }
             };
             ~PyTap()
@@ -34,6 +35,7 @@ namespace sparta
                 if(myTap != nullptr) delete myTap;
                 if(myStream != nullptr) delete myStream;
                 if(myBuffer != nullptr) delete myBuffer;
+                if(myCategory != nullptr) delete myCategory;
             };
             void detach()
             {
@@ -48,6 +50,7 @@ namespace sparta
             Tap *myTap;
             std::ostream* myStream;
             py::detail::pythonbuf* myBuffer;
+            std::string* myCategory;
         };
     }
 }
