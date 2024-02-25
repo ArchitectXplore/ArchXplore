@@ -1,6 +1,7 @@
 #include "python/embeddedModule.hpp"
 #include "system/abstractSystem.hpp"
 #include "system/qemu/qemuSystem.hpp"
+#include "system/qemu/qemuParallelSystem.hpp"
 
 namespace archXplore
 {
@@ -22,6 +23,9 @@ namespace archXplore
 
             pybind11::class_<qemu::qemuSystem, abstractSystem>(system, "qemuSystem", pybind11::dynamic_attr())
                 .def(pybind11::init<>());
+            pybind11::class_<qemu::qemuParallelSystem, abstractSystem>(system, "qemuParallelSystem", pybind11::dynamic_attr())
+                .def(pybind11::init<>())
+                .def_readwrite("parallel_interval", &qemu::qemuParallelSystem::m_tick_quantum);
         };
         python::embeddedModule embedded_system(&bind_system_func);
 

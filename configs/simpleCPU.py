@@ -6,6 +6,8 @@ import time
 
 system = system.qemuSystem()
 
+# system = system.qemuParallelSystem()
+
 system.cpus = [simpleCPU(system, "simpleCPU" + str(i)) for i in range(3)]
 
 system.workload = "/root/pthread_test_riscv"
