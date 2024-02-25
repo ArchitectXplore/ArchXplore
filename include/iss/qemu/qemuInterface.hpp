@@ -113,13 +113,10 @@ namespace archXplore
                                                            *m_last_exec_insn);
                     m_last_exec_insn->clear();
                     // Push to thread queue
-                    if (is_last || m_local_push_event_buffer.size() >= m_buffer_size)
-                    {
-                        if(is_last) {
-                            m_thread_event_queue.pushBatch(m_local_push_event_buffer);
-                        } else {
-                            m_thread_event_queue.tryPushBatch(m_local_push_event_buffer);
-                        }
+                    if(__glibc_unlikely(is_last)) {
+                        m_thread_event_queue.pushBatch(m_local_push_event_buffer);
+                    } else if(m_local_push_event_buffer.size() >= m_buffer_size) {
+                        m_thread_event_queue.tryPushBatch(m_local_push_event_buffer);
                     }
                 };
                 inline auto executeCallback(const addr_t &pc,

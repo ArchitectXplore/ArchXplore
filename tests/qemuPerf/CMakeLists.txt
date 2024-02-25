@@ -3,7 +3,7 @@ project(qemuPerfTest LANGUAGES CXX)
 
 # Set up example
 
-add_executable(qemuPerfTest spartaSchedulerPerf_test.cpp)
+add_executable(qemuPerfTest qemuPerf_test.cpp)
 
 target_include_directories(qemuPerfTest PUBLIC .)
 

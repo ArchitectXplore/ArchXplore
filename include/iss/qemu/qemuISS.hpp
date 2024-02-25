@@ -31,7 +31,7 @@ namespace archXplore
                 {
                     auto cpu = getCPUPtr();
                     // Update cpu status
-                    auto ev = m_event_queue->front();
+                    auto& ev = m_event_queue->front();
                     // Instruction Ptr
                     sparta::SpartaSharedPointer<cpu::instruction_t> insn;
                     // Continue flag

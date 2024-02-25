@@ -22,7 +22,7 @@ int main(int argc, char **argv)
     auto start_time = std::chrono::high_resolution_clock::now();
 
     while(true) {
-        auto event = event_queue_ptr->front();
+        auto& event = event_queue_ptr->front();
         if(event.tag == event.InsnTag) {
             counter++;
             if(event.instruction.is_last) {

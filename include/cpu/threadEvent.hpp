@@ -201,35 +201,6 @@ namespace archXplore
             threadEvent_t(SyscallApiTagType, const eventId_t id, const syscallApi_t data) noexcept
                 : syscall_api(data), tag{Tag::SYSCALL_API}, event_id(id) {}
 
-            // Copy constructor
-            threadEvent_t(const threadEvent_t &that)
-                : tag(that.tag), event_id(that.event_id)
-            {
-                switch (tag)
-                {
-                case Tag::INSTRUCTION:
-                    new (&instruction) instruction_t(that.instruction);
-                    break;
-                case Tag::THREAD_API:
-                    new (&thread_api) threadApi_t(that.thread_api);
-                    break;
-                case Tag::SYSCALL_API:
-                    new (&syscall_api) syscallApi_t(that.syscall_api);
-                    break;
-                default:
-                    // Handle other cases or throw an exception
-                    break;
-                }
-            }
-
-            threadEvent_t &operator=(const threadEvent_t &that){
-                if (this != &that){
-                    this->~threadEvent_t();
-                    new (this) threadEvent_t(that);
-                }
-                return *this;
-            };
-
             ~threadEvent_t(){};
         };
 
