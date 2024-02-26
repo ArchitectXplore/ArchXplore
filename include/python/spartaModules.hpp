@@ -7,8 +7,8 @@
 #include <sparta/ports/PortVec.hpp>
 #include <sparta/ports/DataPort.hpp>
 #include <sparta/ports/Port.hpp>
+#include <sparta/log/Tap.hpp>
 
-#include "python/pySpartaLogTap.hpp"
 #include "python/embeddedModule.hpp"
 
 namespace sparta
@@ -284,5 +284,6 @@ namespace sparta
                     return unit->getPortSet();
                 },
                 py::return_value_policy::reference);
+
     }
 }

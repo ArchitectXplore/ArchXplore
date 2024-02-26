@@ -18,8 +18,7 @@ namespace archXplore
             class qemuSystem : public abstractSystem
             {
             public:
-                qemuSystem() : m_global_scheduler("GlobalScheduler", getSearchScope()),
-                               m_clock_manager(&m_global_scheduler)
+                qemuSystem() 
                 {
                     m_qemu_if = iss::qemu::qemuInterface::getInstance();
                 };
@@ -28,25 +27,27 @@ namespace archXplore
                     m_qemu_if->qemu_shutdown();
                 };
 
-                auto _build() -> void override
+                virtual auto bootSystem() -> void override
                 {
-                    // Create Global Clock
-                    m_global_clock = m_clock_manager.makeRoot(this, "GlobalClock");
-                    setClock(m_global_clock.get());
-                    // Create Individual Clock for each CPU
-                    for (auto it : m_cpu_infos)
-                    {
-                        const std::string clock_name = "CPU" + std::to_string(it.first) + "Clock";
-                        const sparta::Clock::Frequency freq = it.second.freq;
-                        sparta::Clock::Handle clock = m_clock_manager.makeClock(clock_name, m_global_clock, freq);
-                        it.second.cpu->getContainer()->setClock(clock.get());
-                    };
-                    // Build ClockTree
-                    m_clock_manager.normalize();
+                    iss::qemu::m_simulated_cpu_number = getCPUCount();
+                    boot();
+                    // // Create Global Clock
+                    // m_global_clock = m_clock_manager.makeRoot(this, "GlobalClock");
+                    // setClock(m_global_clock.get());
+                    // // Create Individual Clock for each CPU
+                    // for (auto it : m_cpu_infos)
+                    // {
+                    //     const std::string clock_name = "CPU" + std::to_string(it.first) + "Clock";
+                    //     const sparta::Clock::Frequency freq = it.second.freq;
+                    //     sparta::Clock::Handle clock = m_clock_manager.makeClock(clock_name, m_global_clock, freq);
+                    //     it.second.cpu->getContainer()->setClock(clock.get());
+                    // };
+                    // // Build ClockTree
+                    // m_clock_manager.normalize();
                     // Enter Finalized, Build Resources and Start Connection
-                    enterConfiguring();
-                    enterFinalized();
-                    m_global_scheduler.finalize();
+                    // enterConfiguring();
+                    // enterFinalized();
+                    // m_global_scheduler.finalize();
                 };
 
                 auto boot() -> void
@@ -77,25 +78,13 @@ namespace archXplore
                     m_qemu_if->bootQemuThread(args);
                 };
 
-                auto _run(sparta::Scheduler::Tick tick) -> void override
-                {
-                    boot();
-                    m_global_scheduler.run(tick, false, false);
-                };
-
                 auto _createISS() -> iss::abstractISS::UniquePtr override
                 {
-                    iss::qemu::m_simulated_cpu_number++;
                     return std::make_unique<iss::qemu::qemuISS>();
                 }
 
             private:
-                // Sparta Clock and Scheduler
-                sparta::Scheduler m_global_scheduler;
-                sparta::ClockManager m_clock_manager;
-                sparta::Clock::Handle m_global_clock;
                 // QEMU Interface Instance
-
                 iss::qemu::qemuInterface::ptrType m_qemu_if;
             };
 

@@ -6,14 +6,14 @@ namespace archXplore
 {
     namespace cpu
     {
-        abstractCPU::abstractCPU(sparta::TreeNode *tn, const sparta::Clock::Frequency &freq)
-            : Unit(tn), m_tid(getSystemPtr()->getCpuNumber()), m_freq(freq), m_status(cpuStatus_t::INACTIVE),
+        abstractCPU::abstractCPU(sparta::TreeNode *tn)
+            : Unit(tn), m_status(cpuStatus_t::INACTIVE),
               m_cycle(this->getStatisticSet(), "totalCycle", "Number of cycles elapsed", sparta::Counter::CounterBehavior::COUNT_NORMAL),
               m_instret(this->getStatisticSet(), "totalInstRetired", "Number of retired instructions", sparta::Counter::CounterBehavior::COUNT_NORMAL),
               m_wakeup_monitor_event(this->getEventSet(), "wakeUpMonitor",
                                      CREATE_SPARTA_HANDLER(abstractCPU, wakeUpMonitor))
         {
-            getSystemPtr()->addCPU(this, getSystemPtr()->getCpuNumber(), freq);
+            getSystemPtr()->registerCPU(this);
             sparta::StartupEvent(this->getEventSet(),
                                  CREATE_SPARTA_HANDLER(abstractCPU, startUpMonitor));
         };

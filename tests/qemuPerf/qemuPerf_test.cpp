@@ -13,8 +13,6 @@ int main(int argc, char **argv)
 
     auto event_queue_ptr = qemu_if->getHartEventQueuePtr(0);
 
-    m_simulated_cpu_number = 1;
-
     // Instruction counter
     uint64_t counter = 0;
 

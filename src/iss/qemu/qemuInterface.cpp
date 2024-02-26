@@ -19,7 +19,7 @@ namespace archXplore
             std::shared_mutex m_qemu_sync_lock;
             std::condition_variable m_qemu_cond;
             bool m_simulation_done = false;
-            hartId_t m_simulated_cpu_number = 0;
+            hartId_t m_simulated_cpu_number = -1;
             // QEMU status
             std::atomic<eventId_t> m_qemu_sync_event_id = 0;
             // Hart event Queue

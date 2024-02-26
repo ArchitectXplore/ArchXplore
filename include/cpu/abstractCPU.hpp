@@ -41,7 +41,7 @@ namespace archXplore
             abstractCPU(const abstractCPU &that) = delete;
             abstractCPU &operator=(const abstractCPU &that) = delete;
 
-            abstractCPU(sparta::TreeNode *tn, const sparta::Clock::Frequency &freq);
+            abstractCPU(sparta::TreeNode *tn);
 
             ~abstractCPU();
 
@@ -109,9 +109,9 @@ namespace archXplore
             // Instruction retired counter
             sparta::Counter m_instret;
             // Unique Thread Id
-            const hartId_t m_tid;
+            hartId_t m_tid;
             // Processor frequency
-            const sparta::Clock::Frequency m_freq;
+            sparta::Clock::Frequency m_freq;
 
         private:
             // ISS Ptr

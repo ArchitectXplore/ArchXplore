@@ -19,8 +19,6 @@ namespace archXplore
             public:
                 simpleCPUParams(sparta::TreeNode *parent)
                     : ParameterSet(parent){};
-
-                PARAMETER(sparta::Clock::Frequency, frequency, 1000, "CPU frequency")
             };
 
             class simpleCPU : public abstractCPU

@@ -14,17 +14,19 @@ namespace archXplore
         public:
             pesudoSystem(){};
             ~pesudoSystem(){};
-            auto _build() -> void override
+            auto getCPUCount() -> uint32_t override
             {
-                sparta_throw("Can't build pesudo system!");
+                return -1;
             };
-            auto _run(sparta::Scheduler::Tick tick) -> void override{};
+            auto bootSystem() -> void override
+            {
+                sparta_throw("Can't boot pseudo system!");
+            };
             auto _createISS() -> iss::abstractISS::UniquePtr override
             {
                 return nullptr;
             };
-            auto addCPU(cpu::abstractCPU *cpu, const hartId_t &tid,
-                        const sparta::Clock::Frequency &freq) -> void override{};
+            auto registerCPU(cpu::abstractCPU *cpu) -> void override{};
         };
 
     } // namespace system

@@ -9,3 +9,6 @@ add_subdirectory(spartaSchedulerPerf)
 
 # qemuPerf Test
 add_subdirectory(qemuPerf)
+
+# threadPool Test
+add_subdirectory(threadPool)
