@@ -8,7 +8,7 @@
 #include "sparta/sparta.hpp"
 #include "sparta/simulation/ClockManager.hpp"
 #include "sparta/utils/SpartaAssert.hpp"
-#include "sparta/events/PayloadEvent.hpp"
+#include "sparta/events/UniqueEvent.hpp"
 
 #include "cpu/abstractCPU.hpp"
 #include "iss/abstractISS.hpp"
@@ -152,76 +152,68 @@ namespace archXplore
                 enterTeardown();
             };
 
+            inline auto startUpTick(const sparta::Scheduler::Tick& tick) -> void
+            {
+                m_tick_limit = m_main_scheduler->getCurrentTick() + tick;
+                if(m_multithread_enabled) {
+                    handlePreTickEvent();
+                }
+            };
+
             /**
              * @brief Handle the start of multi-threaded simulation
-             * @param rank_id The rank id to start
-             * @return True if the simulation is finished, false otherwise
              */
-            auto handleTickEventStart(uint32_t rank_id) -> bool
+            auto handlePreTickEvent() -> void
             {
-                if(rank_id == 4) {
-                    std::cout << "Thread " << rank_id << " started" << std::endl;
+                sparta::Scheduler::Tick tick;
+                if (SPARTA_EXPECT_FALSE(m_main_scheduler->getCurrentTick() + m_multithread_interval >= m_tick_limit))
+                {
+                    tick = m_tick_limit - m_main_scheduler->getCurrentTick();
                 }
-                sparta_assert(m_multithread_enabled, "Multi-threading is not enabled\n");
-                sparta_assert(m_rank_domains.find(rank_id) != m_rank_domains.end(),
-                              "Invalid rank id " + std::to_string(rank_id) + "\n");
-
-                auto &scheduler = m_rank_domains[rank_id].scheduler;
-                auto &clock = m_rank_domains[rank_id].clock;
-                scheduler->run(this->m_multithread_interval, true, false);
-                return scheduler->isFinished();
+                else
+                {
+                    tick = m_multithread_interval;
+                }
+                if (SPARTA_EXPECT_TRUE(tick))
+                {
+                    for (auto &it : m_rank_domains)
+                    {
+                        auto &rank_id = it.first;
+                        auto &rank_domain = it.second;
+                        auto scheduler = rank_domain.scheduler.get();
+                        if (rank_id)
+                        {
+                            m_thread_futures.emplace_back(m_thread_pool->enqueue(
+                                [=]
+                                {
+                                    scheduler->run(tick, true, false);
+                                    return scheduler->isFinished();
+                                }));
+                        }
+                    }
+                    m_post_tick_event->scheduleRelativeTick(tick-1, m_main_scheduler);
+                }
             };
 
             /**
              * @brief Handle the end of multi-threaded simulation
              */
-            auto handleTickEventEnd() -> void
+            auto handlePostTickEvent() -> void
             {
-                sparta_assert(m_multithread_enabled, "Multi-threading is not enabled\n");
+                bool continue_simulation = false;
 
-                std::map<uint32_t, std::future<bool>> new_thread_futures;
-
-                for (auto &it : m_thread_futures)
-                {
-                    auto & rank_id = it.first;
-                    if (!it.second.get())
-                    {
-                        
-                        new_thread_futures[rank_id] = m_thread_pool->enqueue(
-                            [this, rank_id]
-                            {
-                                return this->handleTickEventStart(rank_id);
-                            });
+                while(!m_thread_futures.empty()){
+                    if(!m_thread_futures.front().get()){
+                        continue_simulation = true;
                     }
+                    m_thread_futures.pop_front();
                 }
 
-                if (!new_thread_futures.empty())
+                if (continue_simulation)
                 {
-                    m_thread_futures = std::move(new_thread_futures);
-                    m_rank_tick_end_event->schedule();
-                }
+                    m_pre_tick_event->scheduleRelativeTick(1, m_main_scheduler);
+                };
             };
-
-            /**
-             * @brief Handle the start up of multi-threaded simulation
-             */
-            auto handleMultiThreadStartUp() -> void
-            {
-                sparta_assert(m_multithread_enabled, "Multi-threading is not enabled\n");
-                for(auto &it : m_rank_domains) 
-                {
-                    auto &rank_id = it.first;
-                    auto &rank_domain = it.second;
-                    if(rank_id) {
-                        m_thread_futures[rank_id] = m_thread_pool->enqueue(
-                            [this, rank_id]
-                            {
-                                return this->handleTickEventStart(rank_id);
-                            });
-                    }
-                }
-                m_rank_tick_end_event->schedule();
-            }
 
             /**
              * @brief Build the clock domains of the system
@@ -256,11 +248,12 @@ namespace archXplore
                 if (m_rank_domains.size() > 1)
                 {
                     m_multithread_enabled = true;
-                    m_rank_tick_end_event = std::make_unique<sparta::Event<sparta::SchedulingPhase::Update>>(
-                        &m_global_event_set, "rank_tick_end_event",
-                        CREATE_SPARTA_HANDLER(abstractSystem, handleTickEventEnd), m_multithread_interval);
-                    // Add startup event to the scheduler
-                    sparta::StartupEvent(&m_global_event_set, CREATE_SPARTA_HANDLER(abstractSystem, handleMultiThreadStartUp));
+                    m_pre_tick_event = std::make_unique<sparta::UniqueEvent<sparta::SchedulingPhase::Update>>(
+                        &m_global_event_set, "pre_tick_event",
+                        CREATE_SPARTA_HANDLER(abstractSystem, handlePreTickEvent));
+                    m_post_tick_event = std::make_unique<sparta::UniqueEvent<sparta::SchedulingPhase::PostTick>>(
+                        &m_global_event_set, "post_tick_event",
+                        CREATE_SPARTA_HANDLER(abstractSystem, handlePostTickEvent));
                 }
             };
 
@@ -274,7 +267,8 @@ namespace archXplore
                 {
                     finalize();
                 }
-                m_main_scheduler->run(tick, false, false);
+                startUpTick(tick);
+                m_main_scheduler->run(tick, true, false);
             }
 
             /**
@@ -343,6 +337,8 @@ namespace archXplore
         public:
             // System parameters
             bool m_multithread_enabled = false;
+
+            sparta::Scheduler::Tick m_tick_limit;
             uint64_t m_multithread_interval;
 
             std::string m_workload_path;
@@ -352,14 +348,15 @@ namespace archXplore
         protected:
             // Thread pool for multi-threading simulation
             std::unique_ptr<utils::threadPool> m_thread_pool;
-            std::map<uint32_t, std::future<bool>> m_thread_futures;
+            std::deque<std::future<bool>> m_thread_futures;
             // Rank & Clock domains
             std::map<uint32_t, rankDomain_t> m_rank_domains;
             // Main scheduler
             sparta::Scheduler *m_main_scheduler;
             sparta::Clock::Handle m_global_clock;
             // Rank tick end event
-            std::unique_ptr<sparta::Event<sparta::SchedulingPhase::Update>> m_rank_tick_end_event;
+            std::unique_ptr<sparta::UniqueEvent<sparta::SchedulingPhase::Update>> m_pre_tick_event;
+            std::unique_ptr<sparta::UniqueEvent<sparta::SchedulingPhase::PostTick>> m_post_tick_event;
             // Global Event Set
             sparta::EventSet m_global_event_set;
             // finalized flag
