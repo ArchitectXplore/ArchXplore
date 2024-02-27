@@ -19,7 +19,7 @@ void produceThreadFunc()
 {
     for (size_t i = 0; i < numElements; i += batchSize)
     {
-        std::deque<uint64_t> batchValues;
+        std::vector<uint64_t> batchValues;
         for (int j = 0; j < batchSize && i + j < numElements; ++j)
         {
             batchValues.push_back(i + j);
@@ -31,7 +31,7 @@ void produceThreadFunc()
 void consumerThreadFunc(){
     for (size_t i = 0; i < numElements; i += batchSize)
     {
-        std::deque<uint64_t> batchValues;
+        std::vector<uint64_t> batchValues;
         buffer.popBatch(batchValues);
     }
 };

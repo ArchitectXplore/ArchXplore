@@ -1,8 +1,10 @@
 #pragma once
 
-#include <deque>
+// #include <deque>
+#include <vector>
 #include <mutex>
 #include <condition_variable>
+#include <algorithm>
 
 namespace archXplore
 {
@@ -18,16 +20,15 @@ namespace archXplore
             // Destructor
             ~threadSafeQueue() = default;
 
-            // Enqueue an element
-            auto push(const T &value) -> void
+            // Set capacity of the queue
+            auto setCapacity(size_t capacity) -> void
             {
-                std::lock_guard<std::mutex> lock(m_mutex);
-                m_queue.emplace_back(value);
-                m_condition.notify_one();
+                std::unique_lock<std::mutex> lock(m_mutex);
+                m_queue.reserve(capacity);
             };
 
             // Enqueue a batch of elements
-            auto pushBatch(std::deque<T> &values) -> void
+            auto pushBatch(std::vector<T> &values) -> void
             {
                 std::unique_lock<std::mutex> lock(m_mutex);
                 // Wait until the queue has enough elements
@@ -39,7 +40,7 @@ namespace archXplore
             };
 
             // Try enqueue a batch of elements
-            auto tryPushBatch(std::deque<T> &values) -> bool
+            auto tryPushBatch(std::vector<T> &values) -> bool
             {
                 std::unique_lock<std::mutex> lock(m_mutex);
                 // Wait until the queue has enough elements
@@ -54,39 +55,30 @@ namespace archXplore
                 return true;
             };
 
-            // Dequeue an element
-            auto pop(T &value) -> void
-            {
-                std::unique_lock<std::mutex> lock(m_mutex);
-                // Wait until the queue is not empty
-                m_condition.wait(lock, [this]
-                                 { return !m_queue.empty(); });
-                value = m_queue.front();
-                m_queue.pop_front();
-                return value;
-            };
 
             // Dequeue a batch of elements
-            auto popBatch(std::deque<T> &values) -> void
+            auto popBatch(std::vector<T> &values) -> void
             {
                 std::unique_lock<std::mutex> lock(m_mutex);
                 // Wait until the queue has enough elements
                 m_condition.wait(lock, [this]
                                  { return !m_producing; });
-                values.swap(m_queue);
+                std::copy(m_queue.rbegin(), m_queue.rend(), std::back_inserter(values));
+                m_queue.clear();
                 m_producing = true;
                 m_condition.notify_one();
             };
 
             // Try dequeue a batch of elements
-            auto tryPopBatch(std::deque<T> &values) -> bool
+            auto tryPopBatch(std::vector<T> &values) -> bool
             {
                 std::unique_lock<std::mutex> lock(m_mutex);
                 // Wait until the queue has enough elements
                 if (m_producing)
                     return false;
 
-                values.swap(m_queue);
+                std::copy(m_queue.rbegin(), m_queue.rend(), std::back_inserter(values));
+                m_queue.clear();
                 m_producing = true;
                 m_condition.notify_one();
 
@@ -101,7 +93,8 @@ namespace archXplore
 
         private:
             // Data maintainer & lock
-            std::deque<T> m_queue;
+            // std::deque<T> m_queue;
+            std::vector<T> m_queue;
             std::mutex m_mutex;
             std::condition_variable m_condition;
             // Batch mode ping-pong condition

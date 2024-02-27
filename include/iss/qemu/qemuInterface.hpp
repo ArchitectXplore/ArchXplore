@@ -74,7 +74,14 @@ namespace archXplore
                 // Constructor
                 hartEventQueue(const hartId_t hart_id, const std::size_t &queue_size = 16384)
                     : m_event_id(0), m_insn_uid(0), m_buffer_size(queue_size), m_hart_id(hart_id),
-                      m_initted(false), m_completed(false){};
+                      m_initted(false), m_completed(false)
+                {
+                    m_local_push_event_buffer.reserve(queue_size*5);
+
+                    m_local_pop_event_buffer.reserve(queue_size*5);
+
+                    m_thread_event_queue.setCapacity(queue_size*5);
+                };
 
                 // Destructor
                 ~hartEventQueue() = default;
@@ -95,11 +102,11 @@ namespace archXplore
                     {
                         m_thread_event_queue.popBatch(m_local_pop_event_buffer);
                     }
-                    return m_local_pop_event_buffer.front();
+                    return m_local_pop_event_buffer.back();
                 };
                 auto pop() -> void
                 {
-                    m_local_pop_event_buffer.pop_front();
+                    m_local_pop_event_buffer.pop_back();
                 };
  
             protected:
@@ -191,8 +198,8 @@ namespace archXplore
                 eventId_t m_event_id;
                 eventId_t m_insn_uid;
                 std::unique_ptr<cpu::instruction_t> m_last_exec_insn;
-                std::deque<cpu::threadEvent_t> m_local_push_event_buffer;
-                std::deque<cpu::threadEvent_t> m_local_pop_event_buffer;
+                std::vector<cpu::threadEvent_t> m_local_push_event_buffer;
+                std::vector<cpu::threadEvent_t> m_local_pop_event_buffer;
                 utils::threadSafeQueue<cpu::threadEvent_t> m_thread_event_queue;
                 // Memory dependency table(Per Byte)
                 std::unordered_map<addr_t, eventId_t> m_mem_dep_table;
