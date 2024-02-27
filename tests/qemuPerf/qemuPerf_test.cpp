@@ -40,7 +40,7 @@ int main(int argc, char **argv)
     std::cout << "Execution time: " << elapsed_time << " microseconds" << std::endl;
     std::cout << "Instructions per second: " << (counter / (elapsed_time / 1000000.0)) << std::endl;
 
-    qemu_if->qemu_shutdown(0);
+    qemu_if->qemu_shutdown();
 
     return 0;
 }

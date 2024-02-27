@@ -241,14 +241,6 @@ namespace archXplore
                     // Unlock QEMU IO thread
                     qemu_plugin_mutex_unlock_iothread();
                 };
-                // Qemu thread guard
-                static auto qemuThreadJoin() -> void
-                {
-                    if (m_qemu_thread->joinable())
-                    {
-                        m_qemu_thread->join();
-                    }
-                };
                 static auto inline getHartEventQueuePtr(const hartId_t hart) -> hartEventQueue *
                 {
                     if (m_qemu_event_queue[hart] == nullptr)
@@ -280,15 +272,9 @@ namespace archXplore
                 static auto qemu_vcpu_exit(qemu_plugin_id_t id, unsigned int vcpu_index) -> void{
                     // std::cout << "VCPU exitted " << vcpu_index << std::endl;
                 };
-                static auto qemu_shutdown(int exit_code = 0) -> void
+                static auto qemu_shutdown() -> void
                 {
-                    {
-                        std::unique_lock<std::mutex> lock(m_qemu_lock);
-                        m_simulation_done = true;
-                        m_qemu_cond.notify_one();
-                    }
-                    qemu_plugin_shutdown(exit_code);
-                    qemuThreadJoin();
+                    pthread_cancel(m_qemu_thread->native_handle());
                 };
                 static auto qemu_exit(qemu_plugin_id_t id, void *userdata) -> void
                 {
@@ -350,6 +336,7 @@ namespace archXplore
                         }
                     }
                 };
+
                 static auto qemu_vcpu_insn_exec(unsigned int vcpu_index, void *userdata) -> void
                 {
                     hartEventQueue *vcpu_queue = getHartEventQueuePtr(vcpu_index);
@@ -363,6 +350,7 @@ namespace archXplore
                         insn.opcode,
                         insn.len);
                 };
+
                 static auto qemu_vcpu_mem(unsigned int vcpu_index,
                                           qemu_plugin_meminfo_t info,
                                           uint64_t vaddr,

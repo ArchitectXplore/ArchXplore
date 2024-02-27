@@ -1,6 +1,7 @@
 #include "python/embeddedModule.hpp"
 #include <cstdlib>
 #include <iostream>
+#include <csignal>
 
 namespace py = pybind11;
 
@@ -12,6 +13,13 @@ namespace py = pybind11;
 
 int main(int argc, const char **argv)
 {
+    // Add signal handling for SIGINT (Ctrl-C) so we can exit cleanly.
+    signal(SIGINT, [](int signum){
+        std::cout << "Received signal: " << signum << ". Cleaning up and exiting..." << std::endl;
+        // Terminate the program
+        std::exit(signum);
+    });
+
     py::scoped_interpreter guard;
 
     // Embedded python doesn't set up sys.argv, so we'll do that ourselves.
