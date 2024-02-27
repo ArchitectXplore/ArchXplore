@@ -65,7 +65,7 @@ namespace archXplore
              */
             abstractSystem(const sparta::Clock::Frequency &freq)
                 : RootTreeNode("System"), m_global_event_set(this),
-                  m_system_freq(freq)
+                  m_system_freq(freq), m_multithread_interval(1000 * freq)
             {
                 g_system_ptr = this;
                 // Create clock domains 0 as global clock domain
@@ -168,7 +168,7 @@ namespace archXplore
 
                 auto &scheduler = m_rank_domains[rank_id].scheduler;
                 auto &clock = m_rank_domains[rank_id].clock;
-                scheduler->run(this->m_multithread_interval * clock->getPeriod(), true, false);
+                scheduler->run(this->m_multithread_interval, true, false);
                 return scheduler->isFinished();
             };
 
@@ -258,7 +258,7 @@ namespace archXplore
                     m_multithread_enabled = true;
                     m_rank_tick_end_event = std::make_unique<sparta::Event<sparta::SchedulingPhase::Update>>(
                         &m_global_event_set, "rank_tick_end_event",
-                        CREATE_SPARTA_HANDLER(abstractSystem, handleTickEventEnd), m_multithread_interval*m_global_clock->getPeriod());
+                        CREATE_SPARTA_HANDLER(abstractSystem, handleTickEventEnd), m_multithread_interval);
                     // Add startup event to the scheduler
                     sparta::StartupEvent(&m_global_event_set, CREATE_SPARTA_HANDLER(abstractSystem, handleMultiThreadStartUp));
                 }
@@ -343,7 +343,7 @@ namespace archXplore
         public:
             // System parameters
             bool m_multithread_enabled = false;
-            uint64_t m_multithread_interval = 1000;
+            uint64_t m_multithread_interval;
 
             std::string m_workload_path;
             std::vector<cpu::abstractCPU *> m_cpus;

@@ -10,8 +10,10 @@ namespace archXplore
             : Unit(tn), m_status(cpuStatus_t::INACTIVE),
               m_cycle(this->getStatisticSet(), "totalCycle", "Number of cycles elapsed", sparta::Counter::CounterBehavior::COUNT_NORMAL),
               m_instret(this->getStatisticSet(), "totalInstRetired", "Number of retired instructions", sparta::Counter::CounterBehavior::COUNT_NORMAL),
-              m_wakeup_monitor_event(this->getEventSet(), "wakeUpMonitor",
-                                     CREATE_SPARTA_HANDLER(abstractCPU, wakeUpMonitor))
+              m_wakeup_monitor_event(
+                  this->getEventSet(), "wakeUpMonitor",
+                  CREATE_SPARTA_HANDLER(abstractCPU, wakeUpMonitor),
+                  sparta::Clock::Cycle(100))
         {
             getSystemPtr()->registerCPU(this);
             sparta::StartupEvent(this->getEventSet(),

@@ -54,7 +54,7 @@ namespace archXplore
                     m_status = cpu::cpuStatus_t::ACTIVE;
                     this->reset();
                 } else {
-                    m_wakeup_monitor_event.schedule();
+                    wakeUpMonitor();
                 }
             }
 
@@ -70,7 +70,7 @@ namespace archXplore
                 else if((!isRunning() || isCompleted()) && getISSPtr()->readyToPowerOff()) {
                     return;
                 }
-                m_wakeup_monitor_event.schedule(10000);
+                m_wakeup_monitor_event.schedule();
             };
 
             auto isRunning() const -> bool
