@@ -60,15 +60,18 @@ namespace archXplore
 
             auto wakeUpMonitor() -> void
             {
-                // InActivate State
-                if ((!isRunning() && !isCompleted()) && getISSPtr()->readyToPowerOn())
+                // TODO : Remove in the future, wakeUp monitor is leveraged to implement thread API like cond_wait, join, etc.
+                //        Thread creation should be done by cpu 0 rather than itself.
                 {
-                    m_status = cpu::cpuStatus_t::ACTIVE;
-                    this->reset();
-                    return;
-                }
-                else if((!isRunning() || isCompleted()) && getISSPtr()->readyToPowerOff()) {
-                    return;
+                    if(m_status == cpu::cpuStatus_t::INACTIVE && getISSPtr()->readyToPowerOn()) {
+                        m_status = cpu::cpuStatus_t::ACTIVE;
+                        this->reset();
+                        return;
+                    }
+                    
+                    if(m_status == cpu::cpuStatus_t::INACTIVE && getISSPtr()->readyToPowerOff()) {
+                        return;
+                    }
                 }
                 m_wakeup_monitor_event.schedule();
             };

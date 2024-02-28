@@ -29,9 +29,8 @@ void produceThreadFunc()
 };
 
 void consumerThreadFunc(){
-    for (size_t i = 0; i < numElements; i += batchSize)
-    {
-        std::vector<uint64_t> batchValues;
+    std::vector<uint64_t> batchValues;
+    while(batchValues.size() < numElements) {
         buffer.popBatch(batchValues);
     }
 };

@@ -24,7 +24,6 @@ namespace archXplore
                 };
                 ~qemuSystem()
                 {
-                    m_qemu_if->qemu_shutdown();
                 };
 
                 /**

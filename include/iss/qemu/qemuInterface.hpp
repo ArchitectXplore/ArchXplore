@@ -41,7 +41,7 @@ namespace archXplore
             // QEMU operation mutex
             extern std::mutex m_qemu_lock;
             extern std::condition_variable m_qemu_cond;
-            extern bool m_simulation_done;
+            extern bool m_qemu_exited;
             extern hartId_t m_simulated_cpu_number;
             // Instruction Queue
             extern hartEventQueue *m_qemu_event_queue[MAX_HART];
@@ -76,11 +76,11 @@ namespace archXplore
                     : m_event_id(0), m_insn_uid(0), m_buffer_size(queue_size), m_hart_id(hart_id),
                       m_initted(false), m_completed(false)
                 {
-                    m_local_push_event_buffer.reserve(queue_size*5);
+                    m_local_push_event_buffer.reserve(queue_size * 5);
 
-                    m_local_pop_event_buffer.reserve(queue_size*5);
+                    m_local_pop_event_buffer.reserve(queue_size * 5);
 
-                    m_thread_event_queue.setCapacity(queue_size*5);
+                    m_thread_event_queue.setCapacity(queue_size * 5);
                 };
 
                 // Destructor
@@ -94,7 +94,7 @@ namespace archXplore
                 };
                 auto isCompleted() -> bool
                 {
-                    return m_completed;
+                    return m_completed || m_qemu_exited;
                 };
                 auto front() -> cpu::threadEvent_t &
                 {
@@ -108,7 +108,7 @@ namespace archXplore
                 {
                     m_local_pop_event_buffer.pop_back();
                 };
- 
+
             protected:
                 friend class qemuInterface;
                 inline auto sendLastInsn(bool is_last = false) -> void
@@ -120,14 +120,16 @@ namespace archXplore
                                                            *m_last_exec_insn);
                     m_last_exec_insn->clear();
                     // Push to thread queue
-                    if(__glibc_unlikely(is_last)) {
+                    if(__glibc_unlikely(is_last))
+                    {
                         m_thread_event_queue.pushBatch(m_local_push_event_buffer);
-                    } else if(m_local_push_event_buffer.size() >= m_buffer_size) {
+                    } else if(m_local_push_event_buffer.size() >= m_buffer_size)
+                    {
                         m_thread_event_queue.tryPushBatch(m_local_push_event_buffer);
                     }
                 };
                 inline auto executeCallback(const addr_t &pc,
-                                     const opcode_t &opcode, const uint8_t &len) -> void
+                                            const opcode_t &opcode, const uint8_t &len) -> void
                 {
                     if (__glibc_unlikely(m_last_exec_insn == nullptr))
                     {
@@ -147,21 +149,25 @@ namespace archXplore
                 {
                     m_last_exec_insn->mem.push_back({vaddr, len, is_store});
                     // Construct memory dependency
-                    for (auto addr = vaddr; addr < vaddr + len*8; addr += 8)
+                    for (auto addr = vaddr; addr < vaddr + len * 8; addr += 8)
                     {
                         auto it = m_mem_dep_table.find(addr);
                         if (it != m_mem_dep_table.end())
-                        {    // Dependency found for this address
-                            if(is_store) {
+                        { // Dependency found for this address
+                            if (is_store)
+                            {
                                 // Construct WAW dependency
                                 m_last_exec_insn->mem_dep.push_back({it->second, cpu::instruction_t::WAW});
-                            } else {
+                            }
+                            else
+                            {
                                 // Construct RAW dependency
                                 m_last_exec_insn->mem_dep.push_back({it->second, cpu::instruction_t::RAW});
                             }
                         }
-                        // Update memory dependency table 
-                        if(is_store) {
+                        // Update memory dependency table
+                        if (is_store)
+                        {
                             m_mem_dep_table[addr] = m_event_id;
                         }
                     }
@@ -269,39 +275,23 @@ namespace archXplore
                 /* Instrument functions for QEMU */
                 static auto qemu_vcpu_init(qemu_plugin_id_t id, unsigned int vcpu_index) -> void
                 {
-                    if(vcpu_index >= m_simulated_cpu_number) {
+                    if (vcpu_index >= m_simulated_cpu_number)
+                    {
                         throw std::out_of_range("Simulated CPUs are less than vcpu needed by QEMU\n");
                     }
                     // Resize hart instruction queue
                     auto vcpu_queue = getHartEventQueuePtr(vcpu_index);
                     vcpu_queue->initCallback();
                 };
-                static auto qemu_vcpu_exit(qemu_plugin_id_t id, unsigned int vcpu_index) -> void{
-                    // std::cout << "VCPU exitted " << vcpu_index << std::endl;
-                };
-                static auto qemu_shutdown() -> void
+                static auto qemu_vcpu_exit(qemu_plugin_id_t id, unsigned int vcpu_index) -> void
                 {
-                    pthread_cancel(m_qemu_thread->native_handle());
+                    auto vcpu_queue = getHartEventQueuePtr(vcpu_index);
+                    vcpu_queue->exitCallback();
                 };
                 static auto qemu_exit(qemu_plugin_id_t id, void *userdata) -> void
                 {
-                    for (auto vcpu_queue : m_qemu_event_queue)
-                    {
-                        if (vcpu_queue)
-                        {
-                            vcpu_queue->exitCallback();
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    // Wait kill signal
-                    {
-                        std::unique_lock<std::mutex> lock(m_qemu_lock);
-                        m_qemu_cond.wait(lock, []
-                                         { return m_simulation_done; });
-                    }
+                    m_qemu_exited = true;
+                    pthread_exit(NULL);
                 };
                 static auto qemu_vcpu_tb_trans(qemu_plugin_id_t id, qemu_plugin_tb *tb) -> void
                 {

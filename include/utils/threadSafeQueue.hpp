@@ -15,7 +15,7 @@ namespace archXplore
         {
         public:
             // Constructor
-            threadSafeQueue() :  m_producing(true){};
+            threadSafeQueue() {};
 
             // Destructor
             ~threadSafeQueue() = default;
@@ -23,38 +23,35 @@ namespace archXplore
             // Set capacity of the queue
             auto setCapacity(size_t capacity) -> void
             {
-                std::unique_lock<std::mutex> lock(m_mutex);
+                std::lock_guard<std::mutex> lock(m_mutex);
                 m_queue.reserve(capacity);
             };
 
             // Enqueue a batch of elements
             auto pushBatch(std::vector<T> &values) -> void
             {
-                std::unique_lock<std::mutex> lock(m_mutex);
-                // Wait until the queue has enough elements
-                m_condition.wait(lock, [this]
-                                 { return m_producing; });
-                m_queue.swap(values);
-                m_producing = false;
+                std::lock_guard<std::mutex> lock(m_mutex);
+                if(isEmpty()) {
+                    m_queue.swap(values);
+                } else {
+                    m_queue.insert(m_queue.end(), values.begin(), values.end());
+                    values.clear();
+                }
                 m_condition.notify_one();
             };
 
-            // Try enqueue a batch of elements
+            // Enqueue a batch of elements
             auto tryPushBatch(std::vector<T> &values) -> bool
             {
-                std::unique_lock<std::mutex> lock(m_mutex);
-                // Wait until the queue has enough elements
-                if (!m_producing)
+                std::lock_guard<std::mutex> lock(m_mutex);
+                if(!isEmpty()) {
                     return false;
-
-                m_condition.wait(lock, [this]
-                                 { return m_producing; });
-                m_queue.swap(values);
-                m_producing = false;
-                m_condition.notify_one();
-                return true;
+                } else {
+                    m_queue.swap(values);
+                    m_condition.notify_one();
+                    return true;
+                }
             };
-
 
             // Dequeue a batch of elements
             auto popBatch(std::vector<T> &values) -> void
@@ -62,31 +59,15 @@ namespace archXplore
                 std::unique_lock<std::mutex> lock(m_mutex);
                 // Wait until the queue has enough elements
                 m_condition.wait(lock, [this]
-                                 { return !m_producing; });
-                std::copy(m_queue.rbegin(), m_queue.rend(), std::back_inserter(values));
+                                 { return !isEmpty(); });
+                std::cout << "Popping batch of size " << m_queue.size() << std::endl;
+                std::move(m_queue.rbegin(), m_queue.rend(), std::back_inserter(values));
                 m_queue.clear();
-                m_producing = true;
                 m_condition.notify_one();
-            };
-
-            // Try dequeue a batch of elements
-            auto tryPopBatch(std::vector<T> &values) -> bool
-            {
-                std::unique_lock<std::mutex> lock(m_mutex);
-                // Wait until the queue has enough elements
-                if (m_producing)
-                    return false;
-
-                std::copy(m_queue.rbegin(), m_queue.rend(), std::back_inserter(values));
-                m_queue.clear();
-                m_producing = true;
-                m_condition.notify_one();
-
-                return true;
             };
 
             // Queue empty flag
-            auto isEmpty() -> bool
+            inline auto isEmpty() -> bool
             {
                 return m_queue.empty();
             };
@@ -97,8 +78,6 @@ namespace archXplore
             std::vector<T> m_queue;
             std::mutex m_mutex;
             std::condition_variable m_condition;
-            // Batch mode ping-pong condition
-            bool m_producing;
         };
     } // namespace utils
 } // namespace archXplore

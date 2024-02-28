@@ -1,9 +1,9 @@
 [submodule "ext/mavis"]
 	path = ext/mavis
-	url = https://github.com/ArchitectXplore/mavis.git
+	url = git@github.com:ArchitectXplore/mavis.git
 [submodule "ext/qemu"]
 	path = ext/qemu
-	url = https://github.com/ArchitectXplore/qemu.git
+	url = git@github.com:ArchitectXplore/qemu.gitt
 [submodule "ext/map"]
 	path = ext/map
-	url = https://github.com/ArchitectXplore/map.git
+	url = git@github.com:ArchitectXplore/map.git
