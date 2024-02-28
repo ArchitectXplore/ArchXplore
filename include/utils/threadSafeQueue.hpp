@@ -60,7 +60,6 @@ namespace archXplore
                 // Wait until the queue has enough elements
                 m_condition.wait(lock, [this]
                                  { return !isEmpty(); });
-                std::cout << "Popping batch of size " << m_queue.size() << std::endl;
                 std::move(m_queue.rbegin(), m_queue.rend(), std::back_inserter(values));
                 m_queue.clear();
                 m_condition.notify_one();
