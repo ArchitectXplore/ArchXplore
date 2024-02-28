@@ -4,6 +4,7 @@
 #include <mutex>
 #include <map>
 #include <future>
+#include <list>
 
 #include "sparta/sparta.hpp"
 #include "sparta/simulation/ClockManager.hpp"
@@ -145,7 +146,8 @@ namespace archXplore
                 // Construct thread pool when multi-threading is enabled
                 if (m_multithread_enabled)
                 {
-                    m_thread_pool = std::make_unique<utils::threadPool>(m_cpus.size());
+                    std::size_t num_threads = std::min(m_cpus.size(), m_rank_domains.size() - 1);
+                    m_thread_pool = std::make_unique<utils::threadPool>(num_threads);
                 }
                 // Boot the system and enter teardown state
                 bootSystem();
@@ -312,6 +314,7 @@ namespace archXplore
                 sparta_assert(cpu != nullptr, "CPU pointer is null\n");
                 const hartId_t tid = m_cpus.size();
                 cpu->m_tid = tid;
+                cpu->m_freq = cpu->getClock()->getFrequencyMhz();
                 m_cpus.push_back(cpu);
             };
 
@@ -341,7 +344,10 @@ namespace archXplore
             sparta::Scheduler::Tick m_tick_limit;
             uint64_t m_multithread_interval;
 
+            // Workload parameters
             std::string m_workload_path;
+            std::list<std::string> m_workload_args;
+
             std::vector<cpu::abstractCPU *> m_cpus;
             const sparta::Clock::Frequency m_system_freq;
 

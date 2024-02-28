@@ -45,6 +45,12 @@ namespace archXplore
                     // Simulating command-line arguments
                     std::vector<std::string> args = {"QEMU", "-plugin", plugin_path, m_workload_path};
 
+                    // Add workload arguments
+                    if (m_workload_args.size() > 0)
+                    {
+                        args.insert(args.end(), m_workload_args.begin(), m_workload_args.end());
+                    }
+
                     // Create argc and argv
                     int argc = static_cast<int>(args.size());
                     char **argv = new char *[argc];

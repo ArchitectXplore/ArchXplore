@@ -20,6 +20,7 @@ namespace archXplore
                      { self.run(-1); })
                 .def("build", &abstractSystem::build)
                 .def_readwrite("workload", &abstractSystem::m_workload_path)
+                .def_readwrite("arguments", &abstractSystem::m_workload_args)
                 .def_readwrite("interval", &abstractSystem::m_multithread_interval)
                 ;
 
