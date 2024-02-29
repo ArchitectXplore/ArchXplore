@@ -3,7 +3,7 @@
 	url = git@github.com:ArchitectXplore/mavis.git
 [submodule "ext/qemu"]
 	path = ext/qemu
-	url = git@github.com:ArchitectXplore/qemu.gitt
+	url = git@github.com:ArchitectXplore/qemu.git
 [submodule "ext/map"]
 	path = ext/map
 	url = git@github.com:ArchitectXplore/map.git
