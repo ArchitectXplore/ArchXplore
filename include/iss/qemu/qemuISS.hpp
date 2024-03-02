@@ -1,8 +1,10 @@
 #pragma once
 
+#include <vector>
+#include <deque>
+
 #include "iss/abstractISS.hpp"
 #include "iss/qemu/qemuInterface.hpp"
-#include "cpu/abstractCPU.hpp"
 
 namespace archXplore
 {
@@ -14,71 +16,31 @@ namespace archXplore
             class qemuISS : public abstractISS
             {
             public:
-                qemuISS() = default;
-                ~qemuISS() = default;
 
-                auto readyToPowerOn() -> bool override
-                {
-                    return m_event_queue->isInitted();
-                };
+                inline auto initCPUState() -> void override;
 
-                auto readyToPowerOff() -> bool override
-                {
-                    return m_event_queue->isCompleted();
-                };
+                inline auto generateFetchRequest(const addr_t& addr, const size_t& fetch_size) -> void override;
 
-                auto generateFetchRequest() -> sparta::SpartaSharedPointer<cpu::instruction_t> override
-                {
-                    auto cpu = getCPUPtr();
-                    // Update cpu status
-                    auto& ev = m_event_queue->front();
-                    // Instruction Ptr
-                    sparta::SpartaSharedPointer<cpu::instruction_t> insn;
-                    // Continue flag
-                    bool continue_flag = true;
-                    while (continue_flag)
-                    {
-                        if (ev.tag == ev.SyscallApiTag)
-                        {
-                            handleSyscallApi(ev.event_id, ev.syscall_api);
-                        }
-                        else if (ev.tag == ev.ThreadApiTag)
-                        {
-                            handleThreadApi(ev.event_id, ev.thread_api);
-                        }
-                        else
-                        {
-                            insn = sparta::allocate_sparta_shared_pointer<cpu::instruction_t>(m_insn_allocator, ev.instruction);
-                            continue_flag = false;
-                        }
-                        m_event_queue->pop();
-                    }
-                    return insn;
-                };
+                inline auto processFetchResponse(const uint8_t* data) -> std::vector<cpu::instruction_t> override;
+
+                qemuISS();
+            
+                ~qemuISS();
 
             protected:
-                auto handleThreadApi(const eventId_t &id, const cpu::threadApi_t &api) -> void
-                {
-                    auto cpu = getCPUPtr();
-                    switch (api.eventType)
-                    {
-                    default:
-                        break;
-                    }
-                };
 
-                auto handleSyscallApi(const eventId_t &id, const cpu::syscallApi_t &api) -> void
-                {
-                    return;
-                };
+                inline auto handleThreadApi(const cpu::threadEvent_t& ev) -> void;
 
-                auto init() -> void override
-                {
-                    m_event_queue = qemuInterface::getHartEventQueuePtr(
-                        m_cpu->getThreadID());
-                };
+                inline auto handleSyscallApi(const cpu::threadEvent_t& ev) -> void;
+
+                inline auto wakeUpMonitor() -> void override;
+
+                inline auto initialize() -> void override;
 
             private:
+
+                std::deque<std::vector<cpu::instruction_t>> m_fetch_buffer;
+
                 hartEventQueue *m_event_queue;
             };
         }

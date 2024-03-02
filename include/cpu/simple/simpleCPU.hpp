@@ -1,9 +1,6 @@
 #pragma once
 
-#include "sparta/sparta.hpp"
-#include "sparta/simulation/Unit.hpp"
-#include "sparta/events/Event.hpp"
-#include "sparta/statistics/Counter.hpp"
+#include <queue>
 
 #include "cpu/abstractCPU.hpp"
 
@@ -19,6 +16,8 @@ namespace archXplore
             public:
                 simpleCPUParams(sparta::TreeNode *parent)
                     : ParameterSet(parent){};
+                
+                PARAMETER(uint32_t, fetch_width, 4, "Fetch width of the CPU in bytes");
             };
 
             class simpleCPU : public abstractCPU
@@ -30,14 +29,17 @@ namespace archXplore
 
                 auto reset() -> void override;
 
-                auto exec() -> void;
+                auto tick() -> void override;
 
-                static const char *name;
+                static const char name[];
 
             private:
-                sparta::Event<sparta::SchedulingPhase::Tick> m_insn_exec_event;
-                sparta::Counter m_cycle;
-                sparta::Counter m_instret;
+                const simpleCPUParams *m_params;
+                
+                addr_t m_next_pc;
+
+                std::queue<std::shared_ptr<instruction_t>> m_inst_buffer;
+
             };
 
         } // namespace simple

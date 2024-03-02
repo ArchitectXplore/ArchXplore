@@ -13,8 +13,7 @@ set(CMAKE_C_COMPILER ${CC})
 set(CMAKE_CXX_COMPILER ${CXX})
 
 # Reset CMAKE_CXX_FLAGS
-set(ENV{CFLAGS} "")
-set(ENV{CXXFLAGS} "")
+set(CMAKE_C_FLAGS "")
 set(CMAKE_CXX_FLAGS "")
 
 # Default Build Option -> Debug/Release

@@ -11,7 +11,7 @@ endif()
 ExternalProject_Add(qemu
     SOURCE_DIR        ${QEMU_DIR}                     # Source directory for QEMU
     BINARY_DIR        ${CMAKE_BINARY_DIR}/qemu        # Build directory for QEMU
-    CONFIGURE_COMMAND CC=${CC} CXX=${CXX} ${QEMU_DIR}/configure --prefix=${CMAKE_INSTALL_PREFIX} --target-list=riscv64-linux-user,riscv64-softmmu --enable-plugins ${QEMU_DEBUG_FLAG}   # Configure command (e.g., ./configure)
+    CONFIGURE_COMMAND CC=${CC} CXX=${CXX} CFLAGS=${CMAKE_C_FLAGS} CXXFLAGS=${CMAKE_CXX_FLAGS} ${QEMU_DIR}/configure --prefix=${CMAKE_INSTALL_PREFIX} --target-list=riscv64-linux-user,riscv64-softmmu --enable-plugins ${QEMU_DEBUG_FLAG}   # Configure command (e.g., ./configure)
     BUILD_COMMAND     make -j${nproc}                 # Build command (e.g., make)
     INSTALL_COMMAND   ""                              # Install command (e.g., make install)
     TEST_COMMAND      ""                              # Disable test command

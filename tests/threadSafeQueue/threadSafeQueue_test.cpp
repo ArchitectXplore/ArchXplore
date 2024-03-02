@@ -4,6 +4,7 @@
 #include <iostream>
 #include <chrono>
 #include <deque>
+#include <cassert>
 
 #include "utils/threadSafeQueue.hpp"
 
@@ -32,6 +33,10 @@ void consumerThreadFunc(){
     std::vector<uint64_t> batchValues;
     while(batchValues.size() < numElements) {
         buffer.popBatch(batchValues);
+    }
+    for(auto i = batchValues.size(); i > 0; --i)
+    {
+        assert(batchValues[i-1] == i-1);
     }
 };
 

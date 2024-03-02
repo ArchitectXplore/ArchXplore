@@ -35,6 +35,7 @@ namespace archXplore
 
             struct branchInfo_t
             {
+                bool redirect;
                 uint64_t target_pc;
             };
 
@@ -58,6 +59,7 @@ namespace archXplore
 
             inline void clear()
             {
+                br_info.redirect = false;
                 mem.clear(), data_dep.clear(), mem_dep.clear();
             };
 
@@ -71,7 +73,7 @@ namespace archXplore
 
         struct syscallApi_t
         {
-            /* data */
+            int64_t num;
         };
 
         struct threadApi_t
@@ -192,14 +194,14 @@ namespace archXplore
             const Tag tag = Tag::UNDEFINED;
             eventId_t event_id = 0;
 
-            threadEvent_t(InsnTagType, const eventId_t id, const instruction_t data) noexcept
+            threadEvent_t(InsnTagType, const eventId_t& id, const instruction_t& data) noexcept
                 : instruction(data), tag{Tag::INSTRUCTION}, event_id(id) {}
 
-            threadEvent_t(ThreadApiTagType, const eventId_t id, const threadApi_t data) noexcept
-                : thread_api(data), tag{Tag::THREAD_API}, event_id(id) {}
+            threadEvent_t(ThreadApiTagType, const eventId_t& id, const threadApi_t& data) noexcept
+                : thread_api(data), tag{Tag::THREAD_API}, event_id(id)  {}
 
-            threadEvent_t(SyscallApiTagType, const eventId_t id, const syscallApi_t data) noexcept
-                : syscall_api(data), tag{Tag::SYSCALL_API}, event_id(id) {}
+            threadEvent_t(SyscallApiTagType, const eventId_t& id, const syscallApi_t& data) noexcept
+                : syscall_api(data), tag{Tag::SYSCALL_API}, event_id(id)  {}
 
             ~threadEvent_t(){};
 

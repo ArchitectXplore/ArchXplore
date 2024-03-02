@@ -24,12 +24,13 @@ namespace archXplore
                 };
                 ~qemuSystem()
                 {
+                    m_qemu_if->qemu_shutdown();
                 };
 
                 /**
                  * Boot the system.
                  */
-                virtual auto bootSystem() -> void override
+                auto bootSystem() -> void override
                 {
                     iss::qemu::m_simulated_cpu_number = getCPUCount();
                     boot();
@@ -70,7 +71,7 @@ namespace archXplore
                     m_qemu_if->bootQemuThread(args);
                 };
 
-                auto _createISS() -> iss::abstractISS::UniquePtr override
+                auto _createISS() -> std::unique_ptr<iss::abstractISS> override
                 {
                     return std::make_unique<iss::qemu::qemuISS>();
                 }

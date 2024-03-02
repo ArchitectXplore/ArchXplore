@@ -21,24 +21,26 @@ namespace archXplore
                 for (size_t i = 0; i < numThreads; ++i)
                 {
                     workers.emplace_back([this]
-                                         {
-                while (true) {
-                    std::function<void()> task;
-
                     {
-                        std::unique_lock<std::mutex> lock(queueMutex);
-                        condition.wait(lock, [this] { return stop || !taskQueue.empty(); });
+                        while (true) {
+                            std::function<void()> task;
 
-                        if (stop && taskQueue.empty()) {
-                            return;
-                        }
+                            {
+                                std::unique_lock<std::mutex> lock(queueMutex);
+                                condition.wait(lock, [this] { return stop || !taskQueue.empty(); });
 
-                        task = std::move(taskQueue.front());
-                        taskQueue.pop();
+                                if (stop && taskQueue.empty()) {
+                                    return;
+                                }
+
+                                task = std::move(taskQueue.front());
+                                taskQueue.pop();
+                            }
+
+                            task(); // Execute the task
+                        } 
                     }
-
-                    task(); // Execute the task
-                } });
+                );
                 }
             }
 
