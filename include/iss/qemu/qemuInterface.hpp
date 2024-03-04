@@ -304,7 +304,8 @@ namespace archXplore
                 };
                 static auto qemu_shutdown() -> void
                 {
-                    pthread_cancel(m_qemu_thread->native_handle());
+		    if(m_qemu_thread != nullptr)
+                        pthread_cancel(m_qemu_thread->native_handle());
                 };
                 static auto qemu_vcpu_tb_trans(qemu_plugin_id_t id, qemu_plugin_tb *tb) -> void
                 {

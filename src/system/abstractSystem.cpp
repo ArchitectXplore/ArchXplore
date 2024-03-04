@@ -59,6 +59,8 @@ namespace archXplore
 
         auto abstractSystem::finalize() -> void
         {
+            // Bind tree early
+            bindTreeEarly();
             // Finalize scheduler
             for (auto &it : m_rank_domains)
             {
@@ -71,9 +73,12 @@ namespace archXplore
                 std::size_t num_threads = std::min(m_cpus.size(), m_rank_domains.size() - 1);
                 m_thread_pool = std::make_unique<utils::threadPool>(num_threads);
             }
+            // Bind tree late
+            bindTreeLate();
+            // Enter teardown state
+            enterTeardown();
             // Boot the system and enter teardown state
             bootSystem();
-            enterTeardown();
         };
 
         auto abstractSystem::startUpTick(const sparta::Scheduler::Tick &tick) -> void

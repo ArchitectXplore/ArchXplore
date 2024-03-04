@@ -63,11 +63,12 @@ namespace archXplore
     {                                                                                                                                   \
     public:                                                                                                                             \
         UnitClass##Component(TreeNode *parent, const std::string &name)                                                                 \
-            : clockedObject(parent, name, "Clocked Object of " #UnitClass),                                                             \
+            : clockedObject(parent, name),                                                                                              \
               m_resourceTreeNode(this, name, "Resource Tree Node of " #UnitClass, new UnitClass##Factory){};                            \
         ~UnitClass##Component(){};                                                                                                      \
-        sparta::PortSet *getPortSet() { return m_resourceTreeNode.getResourceAs<sparta::Unit>()->getPortSet(); }                        \
-        sparta::ParameterSet *getParameterSet() { return m_resourceTreeNode.getParameterSet(); }                                        \
+        sparta::PortSet *getPortSet() { return m_resourceTreeNode.getResourceAs<sparta::Unit>()->getPortSet(); };                       \
+        sparta::ParameterSet *getParameterSet() { return m_resourceTreeNode.getParameterSet(); };                                       \
+        void buildTopology() override{};                                                                                                \
                                                                                                                                         \
     private:                                                                                                                            \
         sparta::ResourceTreeNode m_resourceTreeNode;                                                                                    \

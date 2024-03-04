@@ -14,7 +14,7 @@ namespace py = pybind11;
 int main(int argc, const char **argv)
 {
     // Add signal handling for SIGINT (Ctrl-C) so we can exit cleanly.
-    signal(SIGINT, [](int signum){
+    signal(SIGINT, [](int signum) noexcept {
         std::cout << "Received signal: " << signum << ". Cleaning up and exiting..." << std::endl;
         // Terminate the program
         std::exit(signum);

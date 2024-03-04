@@ -44,8 +44,6 @@ namespace sparta
                      self.run();
                  });
 
-        m.attr("Tick") = py::int_(sizeof(Scheduler::Tick) * CHAR_BIT);
-
         py::class_<Clock, TreeNode>(m, "Clock")
             .def(py::init<const std::string &, Scheduler *>());
 
@@ -171,20 +169,20 @@ namespace sparta
             .def(py::init<TreeNode *, const std::string &,
                           const std::string &>())
             //.def("getParent", &TreeNode::getParent);
-            .def(
-                "getChildren",
-                [](const TreeNode &self)
-                {
-                    return self.getChildren();
-                },
-                py::return_value_policy::reference)
-            .def(
-                "getAllChildren",
-                [](const TreeNode &self)
-                {
-                    return TreeNodePrivateAttorney::getAllChildren(self);
-                },
-                py::return_value_policy::reference)
+            // .def(
+            //     "getChildren",
+            //     [](const TreeNode &self)
+            //     {
+            //         return self.getChildren();
+            //     },
+            //     py::return_value_policy::reference)
+            // .def(
+            //     "getAllChildren",
+            //     [](const TreeNode &self)
+            //     {
+            //         return TreeNodePrivateAttorney::getAllChildren(self);
+            //     },
+            //     py::return_value_policy::reference)
             .def(
                 "getName",
                 [](const TreeNode &self)
@@ -200,48 +198,48 @@ namespace sparta
                 },
                 py::return_value_policy::reference)
             // py::return_value_policy::reference_internal);
-            .def("setClock",
-                 [](TreeNode &self, const Clock *clk)
-                 {
-                     return self.setClock(clk);
-                 })
-            .def(
-                "asPortSet",
-                [](TreeNode &self)
-                {
-                    return self.getAs<PortSet>();
-                },
-                py::return_value_policy::reference)
-            .def(
-                "asParamSet",
-                [](TreeNode &self)
-                {
-                    return self.getAs<ParameterSet>();
-                },
-                py::return_value_policy::reference)
-            // getChild Part
-            .def(
-                "getChildAsPortSet",
-                [](TreeNode &self, const std::string &name)
-                {
-                    return self.getChildAs<PortSet>(name);
-                },
-                py::return_value_policy::reference)
-            .def(
-                "getChildAsPort",
-                [](TreeNode &self, const std::string &name)
-                {
-                    return self.getChildAs<Port>(name);
-                },
-                py::return_value_policy::reference)
-            // ParamSet
-            .def(
-                "getChildAsParamSet",
-                [](TreeNode &self, const std::string &name)
-                {
-                    return self.getChildAs<ParameterSet>(name);
-                },
-                py::return_value_policy::reference)
+            // .def("setClock",
+            //      [](TreeNode &self, const Clock *clk)
+            //      {
+            //          return self.setClock(clk);
+            //      })
+            // .def(
+            //     "asPortSet",
+            //     [](TreeNode &self)
+            //     {
+            //         return self.getAs<PortSet>();
+            //     },
+            //     py::return_value_policy::reference)
+            // .def(
+            //     "asParamSet",
+            //     [](TreeNode &self)
+            //     {
+            //         return self.getAs<ParameterSet>();
+            //     },
+            //     py::return_value_policy::reference)
+            // // getChild Part
+            // .def(
+            //     "getChildAsPortSet",
+            //     [](TreeNode &self, const std::string &name)
+            //     {
+            //         return self.getChildAs<PortSet>(name);
+            //     },
+            //     py::return_value_policy::reference)
+            // .def(
+            //     "getChildAsPort",
+            //     [](TreeNode &self, const std::string &name)
+            //     {
+            //         return self.getChildAs<Port>(name);
+            //     },
+            //     py::return_value_policy::reference)
+            // // ParamSet
+            // .def(
+            //     "getChildAsParamSet",
+            //     [](TreeNode &self, const std::string &name)
+            //     {
+            //         return self.getChildAs<ParameterSet>(name);
+            //     },
+            //     py::return_value_policy::reference)
             .def(
                 "attachTap",
                 [](TreeNode &self, const std::string *category, py::object &dest)
