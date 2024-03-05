@@ -171,7 +171,8 @@ namespace archXplore
             statisticBind.def_property_readonly(                                                                                        \
                 name.c_str(),                                                                                                           \
                 [=](UnitClass##Statistics &self) {                                                                                      \
-                    return self.getCounter(name);                                                                                       \
+                    sparta::CounterBase *cntr = self.getCounter(name);                                                                  \
+                    return cntr->get();                                                                                                 \
                 },                                                                                                                      \
                 pybind11::return_value_policy::reference);                                                                              \
         }                                                                                                                               \

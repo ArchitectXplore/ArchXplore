@@ -15,6 +15,7 @@ system.arguments = ["33", "5"]
 system.build()
     
 start = time.perf_counter()
+print("m_cycle[totalCycle]: ", system.cpus[0].Statistics.totalCycle)
 
 system.run()
 
