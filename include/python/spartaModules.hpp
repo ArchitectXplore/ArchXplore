@@ -161,6 +161,10 @@ namespace sparta
                     return self.getChildAs<ParameterBase>(name, true);
                 },
                 py::return_value_policy::reference);
+        
+        py::class_<sparta::CounterBase>(m, "CounterBase", pybind11::dynamic_attr())
+            .def("get", &sparta::CounterBase::get, "Get the current counter value"); 
+
 
         TreeNodeBind
             // TreeNode constructor with no is_indexable parameter
