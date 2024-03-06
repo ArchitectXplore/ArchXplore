@@ -15,6 +15,8 @@
 #include <sparta/ports/PortSet.hpp>
 #include <sparta/ports/PortVec.hpp>
 #include <sparta/log/Tap.hpp>
+#include <sparta/statistics/StatisticSet.hpp>
+#include <sparta/statistics/CounterBase.hpp>
 
 #include "clockedObject.hpp"
 
@@ -68,10 +70,28 @@ namespace archXplore
         ~UnitClass##Component(){};                                                                                                      \
         sparta::PortSet *getPortSet() { return m_resourceTreeNode.getResourceAs<sparta::Unit>()->getPortSet(); };                       \
         sparta::ParameterSet *getParameterSet() { return m_resourceTreeNode.getParameterSet(); };                                       \
+        sparta::StatisticSet *getStatisticSet() { return m_resourceTreeNode.getResourceAs<sparta::Unit>()->getStatisticSet(); }         \
         void buildTopology() override{};                                                                                                \
                                                                                                                                         \
     private:                                                                                                                            \
         sparta::ResourceTreeNode m_resourceTreeNode;                                                                                    \
+    };                                                                                                                                  \
+    class UnitClass##Statistics                                                                                                         \
+    {                                                                                                                                   \
+    public:                                                                                                                             \
+        UnitClass##Statistics(sparta::StatisticSet*ptr) : m_statistics(ptr){};                                                          \
+        ~UnitClass##Statistics(){};                                                                                                     \
+        sparta::CounterBase *getCounter(const std::string &name)                                                                        \
+        {                                                                                                                               \
+            return m_statistics->getCounter(name);                                                                                      \
+        };                                                                                                                              \
+        const sparta::StatisticSet::CounterVector getCounters()                                                                         \
+        {                                                                                                                               \
+            return m_statistics->getCounters();                                                                                         \
+        }                                                                                                                               \
+                                                                                                                                        \
+    private:                                                                                                                            \
+        sparta::StatisticSet *m_statistics;                                                                                             \
     };                                                                                                                                  \
     class UnitClass##Ports                                                                                                              \
     {                                                                                                                                   \
@@ -95,6 +115,7 @@ namespace archXplore
         auto unitBind = pybind11::class_<UnitClass>(m, "__" #UnitClass, pybind11::dynamic_attr());                                      \
         auto paramBind = pybind11::class_<ParamClass>(m, "__" #ParamClass, pybind11::dynamic_attr());                                   \
         auto portBind = pybind11::class_<UnitClass##Ports>(m, "__" #UnitClass "Ports", pybind11::dynamic_attr());                       \
+        auto statisticBind = pybind11::class_<UnitClass##Statistics>(m, "__" #UnitClass "Statistics", pybind11::dynamic_attr());        \
         auto factoryBind = pybind11::class_<UnitClass##Factory>(m, "__" #UnitClass "Factory", pybind11::dynamic_attr());                \
         auto componentBind = pybind11::class_<UnitClass##Component, archXplore::clockedObject>(m, #UnitClass, pybind11::dynamic_attr()) \
                                  .def(pybind11::init<sparta::TreeNode *, const std::string &>());                                       \
@@ -111,6 +132,14 @@ namespace archXplore
             [](UnitClass##Component &self) {                                                                                            \
                 UnitClass##Ports *myPorts = new UnitClass##Ports(self.getPortSet());                                                    \
                 return myPorts;                                                                                                         \
+            },                                                                                                                          \
+            pybind11::return_value_policy::reference);                                                                                  \
+                                                                                                                                        \
+        componentBind.def_property_readonly(                                                                                            \
+            "Statistics",                                                                                                               \
+            [](UnitClass##Component &self) {                                                                                            \
+                UnitClass##Statistics *myStatistics = new UnitClass##Statistics(self.getStatisticSet());                                \
+                return myStatistics;                                                                                                    \
             },                                                                                                                          \
             pybind11::return_value_policy::reference);                                                                                  \
                                                                                                                                         \
@@ -133,6 +162,17 @@ namespace archXplore
                 },                                                                                                                      \
                 [=](ParamClass &self, const pybind11::object &value) {                                                                  \
                     self.getParameter(name)->pyset(value);                                                                              \
+                },                                                                                                                      \
+                pybind11::return_value_policy::reference);                                                                              \
+        }                                                                                                                               \
+        sparta::TreeNode::ChildrenVector statVec = curTn.getStatisticSet()->getChildren();                                              \
+        for (auto it = statVec.begin(); it != statVec.end(); ++it){                                                                     \
+            const std::string &name = (*it)->getName();                                                                                 \
+            statisticBind.def_property_readonly(                                                                                        \
+                name.c_str(),                                                                                                           \
+                [=](UnitClass##Statistics &self) {                                                                                      \
+                    sparta::CounterBase *cntr = self.getCounter(name);                                                                  \
+                    return cntr->get();                                                                                                 \
                 },                                                                                                                      \
                 pybind11::return_value_policy::reference);                                                                              \
         }                                                                                                                               \
