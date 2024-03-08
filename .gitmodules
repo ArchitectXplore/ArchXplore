@@ -7,3 +7,6 @@
 [submodule "ext/map"]
 	path = ext/map
 	url = git@github.com:ArchitectXplore/map.git
+[submodule "ext/iceoryx"]
+	path = ext/iceoryx
+	url = git@github.com:eclipse-iceoryx/iceoryx.git

@@ -1,14 +1,14 @@
 # insnTunnel Test
-add_subdirectory(threadSafeQueue)
+add_subdirectory(ThreadSafeQueue)
 
 # sprataInPython Test
-add_subdirectory(spartaInPython)
+add_subdirectory(SpartaInPython)
 
 # spartaSchedulerPerf Test 
-add_subdirectory(spartaSchedulerPerf)
+add_subdirectory(SpartaSchedulerPerf)
 
 # qemuPerf Test
-add_subdirectory(qemuPerf)
+add_subdirectory(QemuPerf)
 
-# threadPool Test
-add_subdirectory(threadPool)
+# ThreadPool Test
+add_subdirectory(ThreadPool)

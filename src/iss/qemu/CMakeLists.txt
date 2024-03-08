@@ -1,1 +1,1 @@
-add_sources(qemuISS.cpp)
+add_sources(QemuISS.cpp)

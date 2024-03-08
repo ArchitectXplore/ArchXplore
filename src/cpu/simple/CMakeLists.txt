@@ -1,1 +1,1 @@
-add_sources(simpleCPU.cpp)
+add_sources(SimpleCPU.cpp)
