@@ -1,7 +1,9 @@
-#include "python/EmbeddedModule.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <csignal>
+
+#include "python/EmbeddedModule.hpp"
+#include "system/AbstractSystem.hpp"
 
 namespace py = pybind11;
 
@@ -15,6 +17,12 @@ int main(int argc, const char **argv)
 {
     // Add signal handling for SIGINT (Ctrl-C) so we can exit cleanly.
     signal(SIGINT, [](int signum) noexcept {
+        // Clean up the system before exiting.
+        auto system_ptr = archXplore::system::AbstractSystem::getSystemPtr();
+        if (system_ptr)
+        {
+            system_ptr->cleanUp();
+        }
         std::cout << "Received signal: " << signum << ". Cleaning up and exiting..." << std::endl;
         // Terminate the program
         std::exit(signum);

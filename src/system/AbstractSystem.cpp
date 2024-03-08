@@ -10,6 +10,9 @@ namespace archXplore
 
         AbstractSystem::AbstractSystem(const sparta::Clock::Frequency &freq)
             : RootTreeNode("System"), m_global_event_set(this),
+              m_info_logger(this, INFO_LOG,  getName() + " Info Messages"),
+              m_debug_logger(this, DEBUG_LOG, getName() + " Debug Messages"),
+              m_warn_logger(this, WARN_LOG,  getName() + " Warning Messages"),
               m_system_freq(freq), m_multithread_interval(1000 * freq)
         {
             g_system_ptr = this;
@@ -207,7 +210,7 @@ namespace archXplore
         {
             for (auto &cpu : m_cpus)
             {
-                cpu->setISS(_createISS());
+                cpu->setISS(createISS());
             }
         };
 
@@ -247,7 +250,7 @@ namespace archXplore
         {
             sparta_throw("Can't boot pseudo system!");
         };
-        auto PseudoSystem::_createISS() -> std::unique_ptr<iss::AbstractISS>
+        auto PseudoSystem::createISS() -> std::unique_ptr<iss::AbstractISS>
         {
             sparta_throw("Can't create iss within pseudo system!");
             return nullptr;

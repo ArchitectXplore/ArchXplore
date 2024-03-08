@@ -12,4 +12,4 @@ include(IceoryxPackageHelper)
 include(IceoryxPlatform)
 include(IceoryxPlatformSettings)
 
-list(APPEND ArchXplore_LIBS iceoryx_posh::iceoryx_posh iceoryx_posh::iceoryx_posh_roudi)
+list(APPEND ArchXplore_LIBS iceoryx_posh::iceoryx_posh)

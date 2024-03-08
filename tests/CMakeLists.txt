@@ -1,5 +1,5 @@
-# insnTunnel Test
-add_subdirectory(ThreadSafeQueue)
+# InterProcessEvent Test
+add_subdirectory(InterProcessEvent)
 
 # sprataInPython Test
 add_subdirectory(SpartaInPython)

@@ -44,6 +44,10 @@ namespace archXplore
                     else
                     {
                         auto& inst = ev.instruction;
+                        if(ev.is_last == true)
+                        {
+                            
+                        }
                         if ((cur_fetch_pc == inst.pc) && (cur_fetch_pc + inst.len <= addr + fetch_size)) 
                         {
                             fetch_package.emplace_back(inst);

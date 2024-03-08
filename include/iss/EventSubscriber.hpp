@@ -33,18 +33,46 @@ namespace archXplore
                 subscriberOptions.historyRequest = 0;
                 subscriberOptions.queueFullPolicy = iox::popo::QueueFullPolicy::BLOCK_PRODUCER;
 
-                // // Create subscriber
+                auto app_name_str = iox::into<iox::lossy<iox::capro::IdString_t>>(app_name);
+                auto instance_str = iox::into<iox::lossy<iox::capro::IdString_t>>(std::to_string(hart_id));
+                auto event_name_str = iox::into<iox::lossy<iox::capro::IdString_t>>(std::string("ThreadEvent"));
+
+                // Create subscriber
                 m_subscriber.reset(new iox::popo::Subscriber<Message_t>(
-                    {iox::RuntimeName_t(iox::TruncateToCapacity, app_name.c_str()),
-                     iox::RuntimeName_t(iox::TruncateToCapacity, std::to_string(hart_id).c_str()),
-                     "ThreadEvent"},
-                    subscriberOptions));
+                    {app_name_str, instance_str, event_name_str}, subscriberOptions));
+
+                // Reset header to the beginning of the event buffer
+                m_event_buffer_header = m_event_buffer.begin();
+
+                init();
             }
 
             /**
              * @brief Destructor
              */
-            ~EventSubscriber() = default;
+            ~EventSubscriber()
+            {
+                shutdown();
+            };
+
+            /**
+             * @brief Initialize subscriber
+             */
+            auto init() -> void
+            {
+                while (m_subscriber->getSubscriptionState() != iox::SubscribeState::SUBSCRIBED)
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
+            };
+
+            /**
+             * @brief Shutdown subscriber
+             */
+            auto shutdown() -> void
+            {
+                m_subscriber->unsubscribe();
+            };
 
             /**
              * @brief Get front of event buffer

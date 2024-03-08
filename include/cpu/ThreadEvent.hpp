@@ -67,14 +67,14 @@ namespace archXplore
 
             bool is_last = false;
 
-            ThreadEvent_t(InsnTagType, const StaticInst_t& data) noexcept
-                : instruction(data), tag{Tag::INSTRUCTION} {}
+            ThreadEvent_t(InsnTagType, const EventID_t& event_id, const StaticInst_t& data) noexcept
+                : instruction(data), tag{Tag::INSTRUCTION}, event_id{event_id} {}
 
-            ThreadEvent_t(ThreadApiTagType, const PthreadAPI_t& data) noexcept
-                : pthread_api(data), tag{Tag::THREAD_API}  {}
+            ThreadEvent_t(ThreadApiTagType, const EventID_t& event_id, const PthreadAPI_t& data) noexcept
+                : pthread_api(data), tag{Tag::THREAD_API}, event_id{event_id}  {}
 
-            ThreadEvent_t(SyscallApiTagType, const SyscallAPI_t& data) noexcept
-                : syscall_api(data), tag{Tag::SYSCALL_API} {}
+            ThreadEvent_t(SyscallApiTagType, const EventID_t& event_id, const SyscallAPI_t& data) noexcept
+                : syscall_api(data), tag{Tag::SYSCALL_API}, event_id{event_id} {}
 
             ~ThreadEvent_t(){};
 

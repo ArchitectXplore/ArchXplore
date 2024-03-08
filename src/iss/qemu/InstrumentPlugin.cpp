@@ -18,6 +18,10 @@ namespace archXplore
             // Maximum number of harts
             HartID_t InstrumentPlugin::m_max_harts;
 
+            // Instruction counter for each VCPU
+            std::unordered_map<HartID_t, EventID_t> InstrumentPlugin::m_inst_counters;
+            // Event counter for each VCPU
+            std::unordered_map<HartID_t, EventID_t> InstrumentPlugin::m_event_counters;
             // Last executed instructions for each VCPU
             std::unordered_map<HartID_t, cpu::StaticInst_t> InstrumentPlugin::m_last_inst_map;
             // Instruction cache
@@ -98,6 +102,8 @@ extern "C"
         qemu_plugin_register_vcpu_exit_cb(id, archXplore::iss::qemu::InstrumentPlugin::threadExit);
 
         qemu_plugin_register_atexit_cb(id, archXplore::iss::qemu::InstrumentPlugin::qemuAtExit, NULL);
+
+        archXplore::iss::qemu::InstrumentPlugin::startPublishService();
 
         return 0;
     }

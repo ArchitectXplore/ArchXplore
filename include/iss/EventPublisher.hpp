@@ -33,18 +33,53 @@ namespace archXplore
                 publisherOptions.historyCapacity = 0;
                 publisherOptions.subscriberTooSlowPolicy = iox::popo::ConsumerTooSlowPolicy::WAIT_FOR_CONSUMER;
 
+                auto app_name_str = iox::into<iox::lossy<iox::capro::IdString_t>>(app_name);
+                auto instance_str = iox::into<iox::lossy<iox::capro::IdString_t>>(std::to_string(hart_id));
+                auto event_name_str = iox::into<iox::lossy<iox::capro::IdString_t>>(std::string("ThreadEvent"));
+
                 // Create publisher
                 m_publisher.reset(new iox::popo::Publisher<Message_t>(
-                    {iox::RuntimeName_t(iox::TruncateToCapacity, app_name.c_str()),
-                     iox::RuntimeName_t(iox::TruncateToCapacity, std::to_string(hart_id).c_str()),
-                     "ThreadEvent"},
-                    publisherOptions));
+                    {app_name_str, instance_str, event_name_str}, publisherOptions));
+
+                // Initialize publisher
+                init();
             }
 
             /**
              * @brief Destructor
              */
-            ~EventPublisher() = default;
+            ~EventPublisher()
+            {
+                shutdown();
+            };
+
+            /**
+             * @brief Initialize publisher
+             *
+             * @return void
+             */
+            auto init() const -> void
+            {
+                while (!m_publisher->hasSubscribers())
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
+            }
+
+            /**
+             * @brief Shutdown publisher
+             *
+             * @return void
+             */
+            auto shutdown() const -> void
+            {
+                while(m_publisher->hasSubscribers())
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
+                m_publisher->stopOffer();
+            }
+
 
             /**
              * @brief Publish event
@@ -59,25 +94,13 @@ namespace archXplore
                 m_event_buffer.emplace_back(std::forward<Args>(args)...);
                 if (m_event_buffer.size() == m_event_buffer.capacity() || force_publish)
                 {
-                    while (!m_publisher->publishCopyOf(m_event_buffer) || !iox::hasTerminationRequested())
+                    while (!m_publisher->publishCopyOf(m_event_buffer))
                     {
                         continue;
                     }
+                    m_event_buffer.clear();
                 }
             };
-
-            /**
-             * @brief Wait for subscribers
-             *
-             * @return void
-             */
-            inline auto waitForSubscribers() const -> void
-            {
-                while (!m_publisher->hasSubscribers() || !iox::hasTerminationRequested())
-                {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                }
-            }
 
         private:
             // Application name

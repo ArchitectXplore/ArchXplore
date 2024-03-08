@@ -50,6 +50,11 @@ namespace archXplore
         class AbstractSystem : public sparta::RootTreeNode
         {
         public:
+
+            static constexpr const char *INFO_LOG = "info";
+            static constexpr const char *WARN_LOG = sparta::log::categories::WARN_STR;
+            static constexpr const char *DEBUG_LOG = sparta::log::categories::DEBUG_STR;
+
             /**
              * @brief Boot the system
              */
@@ -59,7 +64,12 @@ namespace archXplore
              * @brief Create the instruction set simulator
              * @return Pointer to the instruction set simulator object
              */
-            virtual auto _createISS() -> std::unique_ptr<iss::AbstractISS> = 0;
+            virtual auto createISS() -> std::unique_ptr<iss::AbstractISS> = 0;
+
+            /**
+             * @brief Clean up the system
+             */
+            virtual auto cleanUp() -> void{};
 
             // Delete Copy function
             AbstractSystem(const AbstractSystem &that) = delete;
@@ -104,7 +114,7 @@ namespace archXplore
              * @param process Pointer to the process object
              * @return Pointer to the process object
              */
-            auto newProcess(Process *process) -> Process *; 
+            auto newProcess(Process *process) -> Process *;
 
             /**
              * @brief Build the system
@@ -153,7 +163,7 @@ namespace archXplore
              * @param tid Hart id
              * @return Pointer to the CPU object
              */
-            inline auto getCPUPtr(const HartID_t &tid) -> cpu::AbstractCPU *;
+            auto getCPUPtr(const HartID_t &tid) -> cpu::AbstractCPU *;
 
             /**
              * @brief Get the system pointer
@@ -189,7 +199,7 @@ namespace archXplore
             std::string m_workload_path;
             std::list<std::string> m_workload_args;
             // Workloads
-            std::vector<Process*> m_processes;
+            std::vector<Process *> m_processes;
 
             std::vector<cpu::AbstractCPU *> m_cpus;
             const sparta::Clock::Frequency m_system_freq;
@@ -214,6 +224,15 @@ namespace archXplore
             sparta::EventSet m_global_event_set;
 
             bool m_finalized = false;
+
+            //! Default info logger
+            sparta::log::MessageSource m_info_logger;
+
+            //! Default warn logger
+            sparta::log::MessageSource m_warn_logger;
+
+            //! Default debug logger
+            sparta::log::MessageSource m_debug_logger;
         };
 
         class PseudoSystem : public AbstractSystem
@@ -222,7 +241,7 @@ namespace archXplore
             PseudoSystem();
             ~PseudoSystem();
             auto bootSystem() -> void override;
-            auto _createISS() -> std::unique_ptr<iss::AbstractISS> override;
+            auto createISS() -> std::unique_ptr<iss::AbstractISS> override;
             auto registerCPU(cpu::AbstractCPU *cpu) -> void override;
         };
 
