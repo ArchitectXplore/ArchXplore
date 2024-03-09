@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unistd.h>
+#include <iostream>
 
 #include "sparta/simulation/ClockManager.hpp"
 #include "sparta/events/EventSet.hpp"
@@ -12,7 +13,7 @@
 #include "system/AbstractSystem.hpp"
 #include "iss/qemu/QemuISS.hpp"
 
-#include "utils/Subprocess.h"
+#include "utils/Subprocess.hpp"
 
 namespace archXplore
 {
@@ -29,24 +30,6 @@ namespace archXplore
                  */
                 QemuSystem()
                 {
-                    int result;
-
-                    std::system("pkill iox-roudi");
-
-                    std::this_thread::sleep_for(std::chrono::seconds(1));
-
-                    // Boot RouDi Process
-                    std::string roudi_exe = executablePath() + "/iox-roudi";
-
-                    const char *roudi_cmd[] = {roudi_exe.c_str(), NULL};
-
-                    result = subprocess_create(roudi_cmd, 0, &m_roudi_subprocess);
-
-                    if (result != 0)
-                    {
-                        throw std::runtime_error("Failed to create RouDi subprocess");
-                    }
-
                     // Initialize RouDi App
                     auto app_name = iox::RuntimeName_t(iox::TruncateToCapacity, getAppName().c_str());
                     iox::runtime::PoshRuntime::initRuntime(app_name);
@@ -54,10 +37,7 @@ namespace archXplore
                 /**
                  * @brief Destroy the QemuSystem object
                  */
-                ~QemuSystem()
-                {
-                    cleanUp();
-                };
+                ~QemuSystem(){};
 
                 /**
                  * @brief Clean up the system and release resources.
@@ -67,7 +47,7 @@ namespace archXplore
                     // Shutdown QEMU Subprocesses
                     for (auto &qemu_subprocess : m_qemu_subprocesses)
                     {
-                        subprocess_destroy(&qemu_subprocess);
+                        qemu_subprocess->kill(2);
                     }
                 };
 
@@ -94,31 +74,27 @@ namespace archXplore
                 {
                     // Boot QEMU Process
 
-                    subprocess_s qemu_subprocess;
-
-                    std::vector<const char *> command_vec;
+                    std::vector<std::string> command_vec;
                     // QEMU Location
                     std::string qemu_location = executablePath() + "/qemu/qemu-riscv64";
-                    command_vec.push_back(qemu_location.c_str());
+                    command_vec.push_back(qemu_location);
                     // QEMU Plugin
                     std::string plugin_prefix = "-plugin";
-                    command_vec.push_back(plugin_prefix.c_str());
+                    command_vec.push_back(plugin_prefix);
 
                     std::string plugin_cmd = executablePath() + "/libInstrumentPlugin.so" + ",AppName=" + getAppName() +
                                              ",ProcessID=" + std::to_string(guest_process->pid) +
                                              ",BootHart=" + std::to_string(guest_process->boot_hart) +
                                              ",MaxHarts=" + std::to_string(guest_process->max_harts);
-                    command_vec.push_back(plugin_cmd.c_str());
+                    command_vec.push_back(plugin_cmd);
                     // QEMU guest executable
                     std::string executable_path = guest_process->executable;
-                    command_vec.push_back(executable_path.c_str());
+                    command_vec.push_back(executable_path);
                     // QEMU guest arguments
                     for (auto &arg : guest_process->arguments)
                     {
                         command_vec.push_back(arg.c_str());
                     }
-                    // QEMU Command Termination
-                    command_vec.push_back(NULL);
 
                     if (SPARTA_EXPECT_FALSE(m_debug_logger))
                     {
@@ -128,25 +104,17 @@ namespace archXplore
                         log += " with command: ";
                         for (auto &cmd : command_vec)
                         {
-                            if (cmd != NULL)
-                            {
-                                log += std::string(cmd) + " ";
-                            }
+                            log += std::string(cmd) + " ";
                         }
                         m_debug_logger << log << std::endl;
                     }
 
-                    const char *const *qemu_cmd = command_vec.data();
-
-                    if (!subprocess_create(qemu_cmd, 0, &qemu_subprocess))
-                    {
-                        m_qemu_subprocesses.push_back(qemu_subprocess);
-                    }
-                    else
-                    {
-                        throw std::runtime_error("Failed to create Qemu subprocess");
-                    }
-
+                    m_qemu_subprocesses.emplace_back(new subprocess::Popen(
+                        command_vec,
+                        subprocess::input{subprocess::PIPE},
+                        subprocess::output{subprocess::PIPE},
+                        subprocess::error{subprocess::PIPE}));
+                    
                     // Boot harts for this process
                     getCPUPtr(guest_process->boot_hart)->scheduleStartupEvent();
                     for (HartID_t hart_offset = 1; hart_offset < guest_process->max_harts; hart_offset++)
@@ -166,9 +134,7 @@ namespace archXplore
 
             private:
                 // QEMU Subprocesses
-                std::vector<subprocess_s> m_qemu_subprocesses;
-                // RouDi Subprocess
-                subprocess_s m_roudi_subprocess;
+                std::vector<std::unique_ptr<subprocess::Popen>> m_qemu_subprocesses;
             };
 
         } // namespace qemu

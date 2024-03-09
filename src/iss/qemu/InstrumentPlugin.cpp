@@ -30,7 +30,6 @@ namespace archXplore
             std::shared_mutex InstrumentPlugin::m_inst_cache_mutex;
             // Event publisher
             std::unordered_map<HartID_t, std::unique_ptr<EventPublisher>> InstrumentPlugin::m_event_publishers;
-
         } // namespace qemu
 
     } // namespace iss

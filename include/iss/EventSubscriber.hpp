@@ -1,9 +1,8 @@
 #pragma once
 
 #include "iceoryx_posh/popo/subscriber.hpp"
-#include "iceoryx_hoofs/cxx/vector.hpp"
 
-#include "cpu/ThreadEvent.hpp"
+#include "iss/IPCConfig.hpp"
 
 namespace archXplore
 {
@@ -12,8 +11,6 @@ namespace archXplore
 
         class EventSubscriber
         {
-            typedef iox::cxx::vector<cpu::ThreadEvent_t, 1024> Message_t;
-
         public:
             EventSubscriber(const EventSubscriber &rhs) = delete;
             EventSubscriber &operator=(const EventSubscriber &rhs) = delete;
@@ -29,7 +26,7 @@ namespace archXplore
             {
                 // Configure subscriber options
                 iox::popo::SubscriberOptions subscriberOptions;
-                subscriberOptions.queueCapacity = 4;
+                subscriberOptions.queueCapacity = MESSAGE_BUFFER_SIZE;
                 subscriberOptions.historyRequest = 0;
                 subscriberOptions.queueFullPolicy = iox::popo::QueueFullPolicy::BLOCK_PRODUCER;
 
@@ -140,9 +137,9 @@ namespace archXplore
             // Subscriber
             std::unique_ptr<iox::popo::Subscriber<Message_t>> m_subscriber;
             // Event buffer
-            iox::cxx::vector<cpu::ThreadEvent_t, 1024> m_event_buffer;
+            Message_t m_event_buffer;
             // Header of the event buffer
-            iox::cxx::vector<cpu::ThreadEvent_t, 1024>::iterator m_event_buffer_header;
+            Message_t::iterator m_event_buffer_header;
         };
 
     } // namespace iss

@@ -10,9 +10,9 @@ namespace archXplore
 
         AbstractSystem::AbstractSystem(const sparta::Clock::Frequency &freq)
             : RootTreeNode("System"), m_global_event_set(this),
-              m_info_logger(this, INFO_LOG,  getName() + " Info Messages"),
+              m_info_logger(this, INFO_LOG, getName() + " Info Messages"),
               m_debug_logger(this, DEBUG_LOG, getName() + " Debug Messages"),
-              m_warn_logger(this, WARN_LOG,  getName() + " Warning Messages"),
+              m_warn_logger(this, WARN_LOG, getName() + " Warning Messages"),
               m_system_freq(freq), m_multithread_interval(1000 * freq)
         {
             g_system_ptr = this;
@@ -20,7 +20,9 @@ namespace archXplore
             this->registerClockDomain(this, 0, freq);
         };
 
-        AbstractSystem::~AbstractSystem(){};
+        AbstractSystem::~AbstractSystem()
+        {
+        };
 
         auto AbstractSystem::getCPUCount() -> uint32_t
         {
@@ -99,7 +101,14 @@ namespace archXplore
 
         auto AbstractSystem::startUpTick(const sparta::Scheduler::Tick &tick) -> void
         {
-            m_tick_limit = m_main_scheduler->getCurrentTick() + tick;
+            if (tick == sparta::Scheduler::INDEFINITE)
+            {
+                m_tick_limit = sparta::Scheduler::INDEFINITE;
+            }
+            else
+            {
+                m_tick_limit = m_main_scheduler->getCurrentTick() + tick;
+            }
             if (m_multithread_enabled)
             {
                 handlePreTickEvent();
@@ -134,7 +143,10 @@ namespace archXplore
                             }));
                     }
                 }
-                m_post_tick_event->scheduleRelativeTick(tick - 1, m_main_scheduler);
+                if (!m_post_tick_event->isScheduled())
+                {
+                    m_post_tick_event->scheduleRelativeTick(tick - 1, m_main_scheduler);
+                }
             }
         };
 
@@ -201,6 +213,7 @@ namespace archXplore
             if (SPARTA_EXPECT_FALSE(!m_finalized))
             {
                 finalize();
+                m_finalized = true;
             }
             startUpTick(tick);
             m_main_scheduler->run(tick, true, false);
@@ -255,8 +268,7 @@ namespace archXplore
             sparta_throw("Can't create iss within pseudo system!");
             return nullptr;
         };
-        auto PseudoSystem::registerCPU(cpu::AbstractCPU *cpu) -> void
-        {};
+        auto PseudoSystem::registerCPU(cpu::AbstractCPU *cpu) -> void{};
 
     } // namespace system
 

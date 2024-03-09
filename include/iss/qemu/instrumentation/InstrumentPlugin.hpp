@@ -100,13 +100,20 @@ namespace archXplore
                  *
                  * @return void
                  */
-                static auto qemuAtExit(qemu_plugin_id_t id, void *userdata) -> void{
+                static auto qemuAtExit(qemu_plugin_id_t id, void *userdata) -> void
+                {
                     // Exit QEMU main thread
                     // pthread_exit(NULL);
                     for (auto &publisher : m_event_publishers)
                     {
                         publisher.second->shutdown(true);
                     }
+                    
+                    iox::RuntimeName_t runtime_name = iox::runtime::PoshRuntime::getInstance().getInstanceName();
+                    iox::runtime::IpcMessage sendBuffer;
+                    sendBuffer << IpcMessageTypeToString(iox::runtime::IpcMessageType::TERMINATION) << runtime_name;
+                    iox::runtime::IpcMessage receiveBuffer;
+                    iox::runtime::PoshRuntime::getInstance().sendRequestToRouDi(sendBuffer, receiveBuffer);
                 };
 
                 /**

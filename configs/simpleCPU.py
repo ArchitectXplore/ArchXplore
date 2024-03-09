@@ -1,9 +1,6 @@
-import archXplore
 from archXplore import *
 
-import sys
 import time
-import os
 
 class helloWorld(Process):
     def __init__(self):
@@ -32,16 +29,19 @@ class libquantum(Process):
         self.executable = "/opt/riscvBenchSuite/spec2006/benchspec/CPU2006/462.libquantum/exe/libquantum_base.riscv"
         self.arguments = ["33", "5"]
 
+threads = 64
+
 system = system.QemuSystem()
 
-system.cpus = [SimpleCPU(system, "SimpleCPU" + str(i)).setRank(i+1) for i in range(32)]
+system.interval = system.MAX_INTERVAL
 
-system.newProcess(blackscholes(threads = 8))
+system.cpus = [SimpleCPU(system, "SimpleCPU" + str(i)).setRank(i) for i in range(threads)]
 
-system.newProcess(helloWorld())
+for i in range(threads):
+    system.newProcess(libquantum())
 
 system.build()
-    
+
 start = time.perf_counter()
 
 system.run()

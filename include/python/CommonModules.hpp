@@ -54,7 +54,9 @@ namespace archXplore
                 .def("newProcess", &archXplore::system::AbstractSystem::newProcess, py::keep_alive<1, 2>(),
                      pybind11::return_value_policy::reference, "Create a new process")
                 .def_readwrite("interval", &archXplore::system::AbstractSystem::m_multithread_interval,
-                               "Multithreading interval (in ticks)");
+                               "Multithreading interval (in ticks)")
+                .def_readonly("MAX_INTERVAL", &archXplore::system::AbstractSystem::MAX_INTERVAL, "Maximum multithreading interval (in ticks)");
+                
             // Bind QemuSystem
             pybind11::class_<archXplore::system::qemu::QemuSystem, archXplore::system::AbstractSystem>(system, "QemuSystem", pybind11::dynamic_attr())
                 .def(pybind11::init<>());

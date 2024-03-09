@@ -33,7 +33,7 @@ namespace archXplore
          */
         ClockedObject *setClockDomain(uint32_t rank, const sparta::Clock::Frequency &freq)
         {
-            sparta_assert(rank != 0, "Cannot use rank 0 as it is reserved for the global clock domain.");
+            // sparta_assert(rank != 0, "Cannot use rank 0 as it is reserved for the global clock domain.");
             m_freq = freq;
             m_rank = rank;
             return this;
@@ -57,7 +57,7 @@ namespace archXplore
          */
         ClockedObject *setRank(uint32_t rank)
         {
-            sparta_assert(rank != 0, "Cannot use rank 0 as it is reserved for the global clock domain.");
+            // sparta_assert(rank != 0, "Cannot use rank 0 as it is reserved for the global clock domain.");
             m_rank = rank;
             return this;
         };

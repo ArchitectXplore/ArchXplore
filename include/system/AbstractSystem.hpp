@@ -195,6 +195,9 @@ namespace archXplore
             sparta::Scheduler::Tick m_tick_limit;
             uint64_t m_multithread_interval;
 
+            // Maximum interval for multi-threading simulation
+            const uint64_t MAX_INTERVAL = sparta::Scheduler::INDEFINITE;
+
             // Workload parameters
             std::string m_workload_path;
             std::list<std::string> m_workload_args;

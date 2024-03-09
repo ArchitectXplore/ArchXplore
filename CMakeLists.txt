@@ -58,6 +58,11 @@ target_include_directories(InstrumentPlugin PUBLIC ${ArchXplore_INCLUDES})
 target_link_libraries(InstrumentPlugin PRIVATE iceoryx_posh::iceoryx_posh)
 add_dependencies(InstrumentPlugin qemu)
 
+# IPC Service
+add_executable(IPCService src/iss/IPCService.cpp)
+target_include_directories(IPCService PUBLIC ${ArchXplore_INCLUDES})
+target_link_libraries(IPCService PRIVATE iceoryx_hoofs::iceoryx_hoofs iceoryx_posh::iceoryx_posh_roudi)
+
 # Main
 add_executable(ArchXplore src/python/ArchXplorePy.cpp ${ArchXplore_SRCS})
 target_include_directories(ArchXplore PUBLIC ${ArchXplore_INCLUDES})

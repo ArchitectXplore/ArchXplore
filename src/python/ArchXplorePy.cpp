@@ -7,6 +7,16 @@
 
 namespace py = pybind11;
 
+
+void systemCleanUp(int signum) noexcept
+{
+    auto system_ptr = archXplore::system::AbstractSystem::getSystemPtr();
+    if (system_ptr)
+    {
+        system_ptr->cleanUp();
+    }
+}
+
 /*
  * This wrapper program runs python scripts using the python interpretter which
  * will be built into gem5. Its first argument is the script to run, and then
@@ -16,17 +26,7 @@ namespace py = pybind11;
 int main(int argc, const char **argv)
 {
     // Add signal handling for SIGINT (Ctrl-C) so we can exit cleanly.
-    signal(SIGINT, [](int signum) noexcept {
-        // Clean up the system before exiting.
-        auto system_ptr = archXplore::system::AbstractSystem::getSystemPtr();
-        if (system_ptr)
-        {
-            system_ptr->cleanUp();
-        }
-        std::cout << "Received signal: " << signum << ". Cleaning up and exiting..." << std::endl;
-        // Terminate the program
-        std::exit(signum);
-    });
+    signal(SIGINT, systemCleanUp);
 
     py::scoped_interpreter guard;
 
@@ -58,6 +58,8 @@ int main(int argc, const char **argv)
 
     // Actually call the script.
     py::eval_file(argv[1]);
+
+    systemCleanUp(0);
 
     return 0;
 }

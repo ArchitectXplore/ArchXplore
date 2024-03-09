@@ -1,10 +1,8 @@
 #pragma once
 
 #include "iceoryx_posh/popo/publisher.hpp"
-#include "iceoryx_hoofs/cxx/vector.hpp"
-#include "iox/signal_watcher.hpp"
 
-#include "cpu/ThreadEvent.hpp"
+#include "iss/IPCConfig.hpp"
 
 namespace archXplore
 {
@@ -13,8 +11,6 @@ namespace archXplore
 
         class EventPublisher
         {
-            typedef iox::cxx::vector<cpu::ThreadEvent_t, 1024> Message_t;
-
         public:
             EventPublisher(const EventPublisher &rhs) = delete;
             EventPublisher &operator=(const EventPublisher &rhs) = delete;
@@ -110,7 +106,7 @@ namespace archXplore
             // Publisher
             std::unique_ptr<iox::popo::Publisher<Message_t>> m_publisher;
             // Event buffer
-            archXplore::iss::EventPublisher::Message_t m_event_buffer;
+            Message_t m_event_buffer;
         };
 
     } // namespace iss
