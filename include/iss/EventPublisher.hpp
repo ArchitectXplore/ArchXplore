@@ -13,7 +13,7 @@ namespace archXplore
 
         class EventPublisher
         {
-            typedef iox::cxx::vector<cpu::ThreadEvent_t, 16384> Message_t;
+            typedef iox::cxx::vector<cpu::ThreadEvent_t, 1024> Message_t;
 
         public:
             EventPublisher(const EventPublisher &rhs) = delete;
@@ -71,9 +71,9 @@ namespace archXplore
              *
              * @return void
              */
-            auto shutdown() const -> void
+            auto shutdown(bool wait_for_subscribers = true) const -> void
             {
-                while(m_publisher->hasSubscribers())
+                while(m_publisher->hasSubscribers() && wait_for_subscribers)
                 {
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 }

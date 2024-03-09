@@ -91,6 +91,13 @@ namespace archXplore
             auto handleTickEvent() -> void;
 
             /**
+             * @brief Schedule the startup event
+             *
+             * This function is called to schedule the startup event.
+             **/
+            auto scheduleStartupEvent() -> void;
+
+            /**
              * @brief Schedule the wakeup monitor event
              *
              * This function is called to schedule the wakeup monitor event.
@@ -186,6 +193,8 @@ namespace archXplore
             HartID_t m_hart_id;
             // Processor frequency
             sparta::Clock::Frequency m_freq;
+            // Logger for tracing
+            sparta::log::MessageSource m_trace_logger;
 
         protected:
             // ISS Ptr
@@ -194,6 +203,8 @@ namespace archXplore
             sparta::UniqueEvent<sparta::SchedulingPhase::Update> m_wakeup_monitor_event;
             // Tick event
             sparta::UniqueEvent<sparta::SchedulingPhase::Tick> m_tick_event;
+            // Startup event
+            sparta::UniqueEvent<sparta::SchedulingPhase::Tick> m_startup_event;
         };
 
     } // namespace iss

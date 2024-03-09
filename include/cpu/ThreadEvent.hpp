@@ -100,7 +100,7 @@ namespace archXplore
 
             ThreadEvent_t& operator=(const ThreadEvent_t& that)
             {
-                if(this != nullptr && this != &that){
+                if(this != &that){
                     this->~ThreadEvent_t();
                 };
                 new (this) ThreadEvent_t(that);

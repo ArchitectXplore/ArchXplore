@@ -9,19 +9,22 @@ namespace archXplore
     {
         AbstractCPU::AbstractCPU(sparta::TreeNode *tn)
             : Unit(tn), m_status(cpuStatus_t::INACTIVE),
+              m_trace_logger(tn, "trace", "Instruction trace log"),
               m_cycle(this->getStatisticSet(), "totalCycle", "Number of cycles elapsed", sparta::Counter::CounterBehavior::COUNT_NORMAL),
               m_instret(this->getStatisticSet(), "totalInstRetired", "Number of retired instructions", sparta::Counter::CounterBehavior::COUNT_NORMAL),
               m_wakeup_monitor_event(this->getEventSet(), "wakeUpMonitor",
                                      CREATE_SPARTA_HANDLER(AbstractCPU, handleWakeUpMonitorEvent), sparta::Clock::Cycle(1)),
               m_tick_event(this->getEventSet(), "tickEvent",
-                           CREATE_SPARTA_HANDLER(AbstractCPU, handleTickEvent), sparta::Clock::Cycle(1))
+                           CREATE_SPARTA_HANDLER(AbstractCPU, handleTickEvent), sparta::Clock::Cycle(1)),
+              m_startup_event(this->getEventSet(), "StartupEvent",
+                              CREATE_SPARTA_HANDLER(AbstractCPU, startUp), sparta::Clock::Cycle(0))
         {
             getSystemPtr()->registerCPU(this);
         };
 
         AbstractCPU::~AbstractCPU(){};
 
-        auto AbstractCPU::getBootPC() -> const Addr_t&
+        auto AbstractCPU::getBootPC() -> const Addr_t &
         {
             return m_boot_pc;
         };
@@ -32,8 +35,14 @@ namespace archXplore
             m_iss->initCPUState();
             // 2. Reset the cpu
             reset();
-            // 3. Schedule the first tick
-            m_tick_event.schedule(sparta::Clock::Cycle(1));
+            // 3. Scheduler the next tick
+            scheduleNextTickEvent();
+            // 4. Tick the cpu
+            tick();
+            if (SPARTA_EXPECT_FALSE(debug_logger_))
+            {
+                debug_logger_ << "CPU " << m_hart_id << " started up" << std::endl;
+            }
         };
 
         auto AbstractCPU::handleTickEvent() -> void
@@ -54,14 +63,19 @@ namespace archXplore
             m_iss->wakeUpMonitor();
         };
 
-        auto AbstractCPU::scheduleWakeUpMonitorEvent() -> void 
+        auto AbstractCPU::scheduleStartupEvent() -> void
+        {
+            m_startup_event.schedule();
+        };
+
+        auto AbstractCPU::scheduleWakeUpMonitorEvent() -> void
         {
             m_wakeup_monitor_event.schedule();
         };
 
         auto AbstractCPU::cancelWakeUpMonitorEvent() -> void
         {
-            if(SPARTA_EXPECT_TRUE(m_wakeup_monitor_event.isScheduled()))
+            if (SPARTA_EXPECT_TRUE(m_wakeup_monitor_event.isScheduled()))
             {
                 m_wakeup_monitor_event.cancel();
             }

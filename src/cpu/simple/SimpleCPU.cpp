@@ -35,12 +35,12 @@ namespace archXplore
                 if (!m_inst_buffer.empty())
                 {
                     auto inst = m_inst_buffer.front();
-                    if (SPARTA_EXPECT_FALSE(debug_logger_))
+                    if (SPARTA_EXPECT_FALSE(m_trace_logger))
                     {
-                        debug_logger_ << "Execute Instruction -> "
-                                      << "uid[" << std::dec << inst->uid << "], "
-                                      << "pc[" << std::hex << inst->pc << "], "
-                                      << "opcode[" << std::hex << inst->opcode << "]" << std::endl;
+                        m_trace_logger << "Execute Instruction -> "
+                                       << "uid[" << std::dec << inst->uid << "], "
+                                       << "pc[" << std::hex << inst->pc << "], "
+                                       << "opcode[" << std::hex << inst->opcode << "]" << std::endl;
                     }
                     m_instret++;
                     m_inst_buffer.pop();
@@ -53,7 +53,6 @@ namespace archXplore
                     {
                         m_next_pc = inst->pc + inst->len;
                     }
-
                 }
             };
 

@@ -91,13 +91,6 @@ namespace archXplore
                     last_event.is_last = true;
                     // Send instruction
                     m_event_publishers[vcpu_index]->publish(true, last_event);
-
-                    std::cout << "Publish last instruction -> Event ID: " << m_event_counters[vcpu_index]
-                              << " UID: " << last_event.instruction.uid << std::endl;
-
-                    m_event_publishers[vcpu_index]->shutdown();
-
-                    std::cout << "Thread " << vcpu_index << " exited." << std::endl;
                 };
 
                 /**
@@ -110,6 +103,23 @@ namespace archXplore
                 static auto qemuAtExit(qemu_plugin_id_t id, void *userdata) -> void{
                     // Exit QEMU main thread
                     // pthread_exit(NULL);
+                    for (auto &publisher : m_event_publishers)
+                    {
+                        publisher.second->shutdown(true);
+                    }
+                };
+
+                /**
+                 * @brief Publisher clean up
+                 *
+                 * @return void
+                 */
+                static auto publisherCleanUp() -> void
+                {
+                    for (auto &publisher : m_event_publishers)
+                    {
+                        publisher.second->shutdown(false);
+                    }
                 };
 
                 /**

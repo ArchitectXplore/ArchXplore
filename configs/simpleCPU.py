@@ -16,22 +16,29 @@ class blackscholes(Process):
     def __init__(self, threads = 1):
         super().__init__()
         self.name = "blackscholes"
-        self.max_harts = threads
+        self.max_harts = threads + 1
         self.executable = "/opt/riscvBenchSuite/parsec-benchmark/pkgs/apps/blackscholes/inst/amd64-linux.gcc/bin/blackscholes"
         self.arguments = [
             str(threads) , 
-            "/opt/riscvBenchSuite/parsec-benchmark/pkgs/apps/blackscholes/run/in_4.txt",
+            "/opt/riscvBenchSuite/parsec-benchmark/pkgs/apps/blackscholes/run/in_16.txt",
             "/opt/riscvBenchSuite/parsec-benchmark/pkgs/apps/blackscholes/run/benchmark.out"
         ]
+        
+class libquantum(Process):
+    def __init__(self):
+        super().__init__()
+        self.name = "libquantum"
+        self.max_harts = 1
+        self.executable = "/opt/riscvBenchSuite/spec2006/benchspec/CPU2006/462.libquantum/exe/libquantum_base.riscv"
+        self.arguments = ["33", "5"]
 
 system = system.QemuSystem()
 
-system.cpus = [SimpleCPU(system, "SimpleCPU" + str(i)).setRank(i+1) for i in range(128)]
+system.cpus = [SimpleCPU(system, "SimpleCPU" + str(i)).setRank(i+1) for i in range(32)]
 
-for i in range(3):
-    system.newProcess(helloWorld())
+system.newProcess(blackscholes(threads = 8))
 
-# system.attachTap("debug", sys.stdout)
+system.newProcess(helloWorld())
 
 system.build()
     

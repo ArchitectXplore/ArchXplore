@@ -96,14 +96,14 @@ namespace archXplore
 
                     subprocess_s qemu_subprocess;
 
-                    std::vector<const char*> command_vec;
+                    std::vector<const char *> command_vec;
                     // QEMU Location
                     std::string qemu_location = executablePath() + "/qemu/qemu-riscv64";
                     command_vec.push_back(qemu_location.c_str());
                     // QEMU Plugin
                     std::string plugin_prefix = "-plugin";
                     command_vec.push_back(plugin_prefix.c_str());
-                    
+
                     std::string plugin_cmd = executablePath() + "/libInstrumentPlugin.so" + ",AppName=" + getAppName() +
                                              ",ProcessID=" + std::to_string(guest_process->pid) +
                                              ",BootHart=" + std::to_string(guest_process->boot_hart) +
@@ -120,7 +120,23 @@ namespace archXplore
                     // QEMU Command Termination
                     command_vec.push_back(NULL);
 
-                    const char* const* qemu_cmd = command_vec.data();
+                    if (SPARTA_EXPECT_FALSE(m_debug_logger))
+                    {
+                        std::string log;
+                        log += "Starting QEMU for process ";
+                        log += std::to_string(guest_process->pid);
+                        log += " with command: ";
+                        for (auto &cmd : command_vec)
+                        {
+                            if (cmd != NULL)
+                            {
+                                log += std::string(cmd) + " ";
+                            }
+                        }
+                        m_debug_logger << log << std::endl;
+                    }
+
+                    const char *const *qemu_cmd = command_vec.data();
 
                     if (!subprocess_create(qemu_cmd, 0, &qemu_subprocess))
                     {
@@ -132,7 +148,7 @@ namespace archXplore
                     }
 
                     // Boot harts for this process
-                    getCPUPtr(guest_process->boot_hart)->startUp();
+                    getCPUPtr(guest_process->boot_hart)->scheduleStartupEvent();
                     for (HartID_t hart_offset = 1; hart_offset < guest_process->max_harts; hart_offset++)
                     {
                         getCPUPtr(guest_process->boot_hart + hart_offset)->scheduleWakeUpMonitorEvent();

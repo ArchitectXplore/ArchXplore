@@ -105,6 +105,8 @@ extern "C"
 
         archXplore::iss::qemu::InstrumentPlugin::startPublishService();
 
+        atexit(archXplore::iss::qemu::InstrumentPlugin::publisherCleanUp);
+
         return 0;
     }
 }

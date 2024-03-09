@@ -12,7 +12,7 @@ namespace archXplore
 
         class EventSubscriber
         {
-            typedef iox::cxx::vector<cpu::ThreadEvent_t, 16384> Message_t;
+            typedef iox::cxx::vector<cpu::ThreadEvent_t, 1024> Message_t;
 
         public:
             EventSubscriber(const EventSubscriber &rhs) = delete;
@@ -140,9 +140,9 @@ namespace archXplore
             // Subscriber
             std::unique_ptr<iox::popo::Subscriber<Message_t>> m_subscriber;
             // Event buffer
-            iox::cxx::vector<cpu::ThreadEvent_t, 16384> m_event_buffer;
+            iox::cxx::vector<cpu::ThreadEvent_t, 1024> m_event_buffer;
             // Header of the event buffer
-            iox::cxx::vector<cpu::ThreadEvent_t, 16384>::iterator m_event_buffer_header;
+            iox::cxx::vector<cpu::ThreadEvent_t, 1024>::iterator m_event_buffer_header;
         };
 
     } // namespace iss

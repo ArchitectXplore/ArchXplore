@@ -14,8 +14,8 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Unset C/CXX Flags
-set(CMAKE_C_FLAGS "-Wall")
-set(CMAKE_CXX_FLAGS "-Wall")
+set(CMAKE_C_FLAGS "")
+set(CMAKE_CXX_FLAGS "")
 
 # Set C/CXX Debug Flags
 set(CMAKE_C_FLAGS_DEBUG "-g -O0")
