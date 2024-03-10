@@ -219,6 +219,11 @@ namespace archXplore
             m_main_scheduler->run(tick, true, false);
         }
 
+        auto AbstractSystem::getElapsedTime() const -> double
+        {
+            return m_main_scheduler->getSimulatedPicoSeconds() * 1e-12;
+        };
+
         auto AbstractSystem::registerISS() -> void
         {
             for (auto &cpu : m_cpus)

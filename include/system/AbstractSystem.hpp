@@ -155,6 +155,12 @@ namespace archXplore
             auto run(sparta::Scheduler::Tick tick) -> void;
 
             /**
+             * @brief Get the elapsed time of the system
+             * @return The elapsed time in seconds
+             */
+            auto getElapsedTime() const -> double;
+
+            /**
              * @brief Register the instruction set simulator to the system
              */
             auto registerISS() -> void;

@@ -57,12 +57,15 @@ namespace archXplore
                     {
                         if(SPARTA_EXPECT_FALSE(ev.is_last))
                         {
-                            m_cpu->m_status = cpu::cpuStatus_t::COMPLETED;
                             m_cpu->cancelNextTickEvent();
                             exit_loop = true;
                             if(m_cpu->m_hart_id == m_cpu->m_process->boot_hart)
                             {
+                                m_cpu->m_status = cpu::cpuStatus_t::COMPLETED;
                                 m_cpu->m_process->is_completed = true;
+                            } else {
+                                m_cpu->m_status = cpu::cpuStatus_t::INACTIVE;
+                                m_cpu->scheduleWakeUpMonitorEvent();
                             }
                         }
                         m_event_queue->popFront();

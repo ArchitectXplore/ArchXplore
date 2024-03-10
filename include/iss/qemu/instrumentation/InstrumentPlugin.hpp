@@ -49,7 +49,7 @@ namespace archXplore
                     auto runtime_name = iox::RuntimeName_t(iox::TruncateToCapacity, m_runtime.c_str());
                     iox::runtime::PoshRuntime::initRuntime(runtime_name);
                     // Preallocate memory for possible harts
-                    for(HartID_t i = 0; i < m_max_harts; ++i)
+                    for (HartID_t i = 0; i < m_max_harts; ++i)
                     {
                         m_event_publishers[i] = nullptr;
                         m_last_insts[i] = cpu::StaticInst_t();
@@ -82,7 +82,10 @@ namespace archXplore
                     // Calculate hart ID
                     const HartID_t hart_id = calculateHartID(vcpu_index);
                     // Create event publisher
-                    m_event_publishers.at(vcpu_index) = std::make_unique<EventPublisher>(m_app_name, hart_id);
+                    if (m_event_publishers.at(vcpu_index) == nullptr)
+                    {
+                        m_event_publishers.at(vcpu_index) = std::make_unique<EventPublisher>(m_app_name, hart_id);
+                    }
                 };
 
                 /**
@@ -121,7 +124,7 @@ namespace archXplore
                 static auto userExitCallback(int signum) noexcept -> void
                 {
                     // Release publish before exit(Roudi receives runtime close before publisher destruction)
-                    for(auto &publisher : m_event_publishers)
+                    for (auto &publisher : m_event_publishers)
                     {
                         publisher.second.reset();
                     }
@@ -151,8 +154,10 @@ namespace archXplore
                                     uint64_t a6, uint64_t a7, uint64_t a8) -> void
                 {
                     // Send syscall event
-                    m_event_publishers.at(vcpu_index)->publish(
-                        true, cpu::ThreadEvent_t::SyscallApiTag, m_event_counters.at(vcpu_index)++, cpu::SyscallAPI_t());
+                    if (m_max_harts > 1)
+                    {
+                        m_event_publishers.at(vcpu_index)->publish(true, cpu::ThreadEvent_t::SyscallApiTag, m_event_counters.at(vcpu_index)++, cpu::SyscallAPI_t());
+                    }
                 };
 
                 /**
@@ -237,7 +242,7 @@ namespace archXplore
                     }
 
                     // First time executing instruction
-                    if(__glibc_likely(m_inst_counters.at(vcpu_index) != 0))
+                    if (__glibc_likely(m_inst_counters.at(vcpu_index) != 0))
                     {
                         cpu::StaticInst_t &last_inst = m_last_insts.at(vcpu_index);
                         // Add next pc to last executed instruction
@@ -247,8 +252,7 @@ namespace archXplore
                             last_inst.br_info.redirect = true;
                         }
                         // Send instruction
-                        m_event_publishers.at(vcpu_index)->publish(
-                            false, cpu::ThreadEvent_t::InsnTag, m_event_counters.at(vcpu_index)++, last_inst);
+                        m_event_publishers.at(vcpu_index)->publish(false, cpu::ThreadEvent_t::InsnTag, m_event_counters.at(vcpu_index)++, last_inst);
                     }
                     // Update last executed instruction
                     cpu::StaticInst_t &cur_inst = m_last_insts.at(vcpu_index);

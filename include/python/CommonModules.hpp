@@ -53,6 +53,7 @@ namespace archXplore
                 .def("build", &archXplore::system::AbstractSystem::build, "Build the system")
                 .def("newProcess", &archXplore::system::AbstractSystem::newProcess, py::keep_alive<1, 2>(),
                      pybind11::return_value_policy::reference, "Create a new process")
+                .def("getElapsedTime", &archXplore::system::AbstractSystem::getElapsedTime, "Get the elapsed time of the system")
                 .def_readwrite("interval", &archXplore::system::AbstractSystem::m_multithread_interval,
                                "Multithreading interval (in ticks)")
                 .def_readonly("MAX_INTERVAL", &archXplore::system::AbstractSystem::MAX_INTERVAL, "Maximum multithreading interval (in ticks)");
