@@ -11,6 +11,8 @@ namespace archXplore
 
             // Application name
             std::string InstrumentPlugin::m_app_name;
+            // Application name
+            std::string InstrumentPlugin::m_runtime;
             // Process information
             ProcessID_t InstrumentPlugin::m_pid;
             // Boot hart ID
@@ -18,18 +20,20 @@ namespace archXplore
             // Maximum number of harts
             HartID_t InstrumentPlugin::m_max_harts;
 
+            // Shared Resource Lock
+            std::mutex InstrumentPlugin::m_shared_resource_mutex;
             // Instruction counter for each VCPU
             std::unordered_map<HartID_t, EventID_t> InstrumentPlugin::m_inst_counters;
             // Event counter for each VCPU
             std::unordered_map<HartID_t, EventID_t> InstrumentPlugin::m_event_counters;
             // Last executed instructions for each VCPU
-            std::unordered_map<HartID_t, cpu::StaticInst_t> InstrumentPlugin::m_last_inst_map;
+            std::unordered_map<HartID_t, cpu::StaticInst_t> InstrumentPlugin::m_last_insts;
+            // Event publisher
+            std::unordered_map<HartID_t, std::unique_ptr<EventPublisher>> InstrumentPlugin::m_event_publishers;
             // Instruction cache
             InstrumentPlugin::InstCache_t InstrumentPlugin::m_inst_cache;
             // Mutex for instruction cache
             std::shared_mutex InstrumentPlugin::m_inst_cache_mutex;
-            // Event publisher
-            std::unordered_map<HartID_t, std::unique_ptr<EventPublisher>> InstrumentPlugin::m_event_publishers;
         } // namespace qemu
 
     } // namespace iss
@@ -72,6 +76,10 @@ extern "C"
                 {
                     archXplore::iss::qemu::InstrumentPlugin::m_app_name = value;
                 }
+                else if (key == "Runtime")
+                {
+                    archXplore::iss::qemu::InstrumentPlugin::m_runtime = value;
+                }
                 else if (key == "ProcessID")
                 {
                     archXplore::iss::qemu::InstrumentPlugin::m_pid = std::stoi(value);
@@ -104,7 +112,7 @@ extern "C"
 
         archXplore::iss::qemu::InstrumentPlugin::startPublishService();
 
-        atexit(archXplore::iss::qemu::InstrumentPlugin::publisherCleanUp);
+        signal(SIGINT, archXplore::iss::qemu::InstrumentPlugin::userExitCallback);
 
         return 0;
     }

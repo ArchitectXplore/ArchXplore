@@ -5,6 +5,7 @@
 #include <map>
 #include <future>
 #include <list>
+#include <csignal>
 
 #include "sparta/simulation/ClockManager.hpp"
 #include "sparta/events/EventSet.hpp"
@@ -101,13 +102,13 @@ namespace archXplore
              * @brief Get the executable path of the running binary
              * @return The executable path
              */
-            auto executablePath() -> const std::string;
+            auto executablePath() const -> std::string;
 
             /**
              * @brief Get the application name
              * @return The application name
              */
-            auto getAppName() -> const std::string;
+            auto getAppName() const -> std::string;
 
             /**
              * @brief New process

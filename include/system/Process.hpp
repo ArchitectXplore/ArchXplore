@@ -22,6 +22,8 @@ namespace archXplore
             ProcessID_t boot_hart;
             // Maximum number of hardware threads
             ProcessID_t max_harts = 1;
+            // Process status
+            bool is_completed = false;
         };
 
     } // namespace system

@@ -6,6 +6,8 @@
 #include "sparta/simulation/Unit.hpp"
 #include "sparta/statistics/Counter.hpp"
 
+#include "system/Process.hpp"
+
 #include "iss/AbstractISS.hpp"
 
 namespace archXplore
@@ -180,6 +182,14 @@ namespace archXplore
              */
             auto setISS(std::unique_ptr<iss::AbstractISS> iss) -> void;
 
+            /**
+             * @brief Set the process pointer
+             *
+             * This function is called to set the process pointer.
+             * @param process The process pointer.
+             */
+            auto setProcess(system::Process *process) -> void;
+
         public:
             // CPU Status
             cpuStatus_t m_status;
@@ -195,6 +205,8 @@ namespace archXplore
             sparta::Clock::Frequency m_freq;
             // Logger for tracing
             sparta::log::MessageSource m_trace_logger;
+            // Process pointer
+            system::Process *m_process;
 
         protected:
             // ISS Ptr

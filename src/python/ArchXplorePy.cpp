@@ -7,13 +7,13 @@
 
 namespace py = pybind11;
 
-
 void systemCleanUp(int signum) noexcept
 {
     auto system_ptr = archXplore::system::AbstractSystem::getSystemPtr();
-    if (system_ptr)
+    system_ptr->cleanUp();
+    if (signum)
     {
-        system_ptr->cleanUp();
+        std::exit(signum);
     }
 }
 

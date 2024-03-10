@@ -46,7 +46,7 @@ namespace archXplore
              */
             ~EventPublisher()
             {
-                shutdown();
+                shutdown(true);
             };
 
             /**
@@ -69,7 +69,7 @@ namespace archXplore
              */
             auto shutdown(bool wait_for_subscribers = true) const -> void
             {
-                while(m_publisher->hasSubscribers() && wait_for_subscribers)
+                while(wait_for_subscribers && m_publisher->hasSubscribers())
                 {
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 }

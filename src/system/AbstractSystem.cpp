@@ -29,7 +29,7 @@ namespace archXplore
             return m_cpus.size();
         };
 
-        auto AbstractSystem::executablePath() -> const std::string
+        auto AbstractSystem::executablePath() const -> std::string
         {
             char buffer[4096];
             std::string binary_path;
@@ -50,7 +50,7 @@ namespace archXplore
             return std::string(binary_dir);
         };
 
-        auto AbstractSystem::getAppName() -> const std::string
+        auto AbstractSystem::getAppName() const -> std::string
         {
             auto pid = getpid();
             return "ArchXplore_" + std::to_string(pid);

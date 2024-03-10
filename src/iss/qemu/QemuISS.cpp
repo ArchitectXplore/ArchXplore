@@ -44,10 +44,6 @@ namespace archXplore
                     else
                     {
                         auto& inst = ev.instruction;
-                        if(ev.is_last == true)
-                        {
-                            
-                        }
                         if ((cur_fetch_pc == inst.pc) && (cur_fetch_pc + inst.len <= addr + fetch_size)) 
                         {
                             fetch_package.emplace_back(inst);
@@ -63,6 +59,11 @@ namespace archXplore
                         {
                             m_cpu->m_status = cpu::cpuStatus_t::COMPLETED;
                             m_cpu->cancelNextTickEvent();
+                            exit_loop = true;
+                            if(m_cpu->m_hart_id == m_cpu->m_process->boot_hart)
+                            {
+                                m_cpu->m_process->is_completed = true;
+                            }
                         }
                         m_event_queue->popFront();
                     }
@@ -109,11 +110,11 @@ namespace archXplore
                         m_cpu->cancelWakeUpMonitorEvent();
                         m_cpu->scheduleNextTickEvent();
                     }
-                    // else if (m_event_queue->isCompleted())
-                    // {
-                    //     m_cpu->m_status = cpu::cpuStatus_t::COMPLETED;
-                    //     m_cpu->cancelWakeUpMonitorEvent();
-                    // }
+                    else if (m_cpu->m_process->is_completed)
+                    {
+                        m_cpu->m_status = cpu::cpuStatus_t::COMPLETED;
+                        m_cpu->cancelWakeUpMonitorEvent();
+                    }
                     break;
                 case cpu::cpuStatus_t::BLOCKED_SYSCALL:
                     if (m_event_queue->tryTake())

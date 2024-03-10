@@ -45,10 +45,17 @@ namespace archXplore
                  */
                 static auto startPublishService() -> void
                 {
-                    auto runtime = m_app_name + "_QEMU_Process_" + std::to_string(m_pid);
                     // Initialize RouDi App
-                    auto runtime_name = iox::RuntimeName_t(iox::TruncateToCapacity, runtime.c_str());
+                    auto runtime_name = iox::RuntimeName_t(iox::TruncateToCapacity, m_runtime.c_str());
                     iox::runtime::PoshRuntime::initRuntime(runtime_name);
+                    // Preallocate memory for possible harts
+                    for(HartID_t i = 0; i < m_max_harts; ++i)
+                    {
+                        m_event_publishers[i] = nullptr;
+                        m_last_insts[i] = cpu::StaticInst_t();
+                        m_inst_counters[i] = 0;
+                        m_event_counters[i] = 0;
+                    }
                 };
 
                 /**
@@ -71,10 +78,11 @@ namespace archXplore
                  */
                 static auto threadInitialize(qemu_plugin_id_t id, unsigned int vcpu_index) -> void
                 {
+                    assert(vcpu_index < m_max_harts);
                     // Calculate hart ID
                     const HartID_t hart_id = calculateHartID(vcpu_index);
                     // Create event publisher
-                    m_event_publishers[vcpu_index] = std::make_unique<EventPublisher>(m_app_name, hart_id);
+                    m_event_publishers.at(vcpu_index) = std::make_unique<EventPublisher>(m_app_name, hart_id);
                 };
 
                 /**
@@ -86,11 +94,11 @@ namespace archXplore
                  */
                 static auto threadExit(qemu_plugin_id_t id, unsigned int vcpu_index) -> void
                 {
-                    auto last_event = cpu::ThreadEvent_t(cpu::ThreadEvent_t::InsnTag, m_event_counters[vcpu_index]++,
-                                                         m_last_inst_map[vcpu_index]);
+                    auto last_event = cpu::ThreadEvent_t(cpu::ThreadEvent_t::InsnTag, m_event_counters.at(vcpu_index)++,
+                                                         m_last_insts.at(vcpu_index));
                     last_event.is_last = true;
                     // Send instruction
-                    m_event_publishers[vcpu_index]->publish(true, last_event);
+                    m_event_publishers.at(vcpu_index)->publish(true, last_event);
                 };
 
                 /**
@@ -102,18 +110,7 @@ namespace archXplore
                  */
                 static auto qemuAtExit(qemu_plugin_id_t id, void *userdata) -> void
                 {
-                    // Exit QEMU main thread
-                    // pthread_exit(NULL);
-                    for (auto &publisher : m_event_publishers)
-                    {
-                        publisher.second->shutdown(true);
-                    }
-                    
-                    iox::RuntimeName_t runtime_name = iox::runtime::PoshRuntime::getInstance().getInstanceName();
-                    iox::runtime::IpcMessage sendBuffer;
-                    sendBuffer << IpcMessageTypeToString(iox::runtime::IpcMessageType::TERMINATION) << runtime_name;
-                    iox::runtime::IpcMessage receiveBuffer;
-                    iox::runtime::PoshRuntime::getInstance().sendRequestToRouDi(sendBuffer, receiveBuffer);
+                    userExitCallback(0);
                 };
 
                 /**
@@ -121,12 +118,14 @@ namespace archXplore
                  *
                  * @return void
                  */
-                static auto publisherCleanUp() -> void
+                static auto userExitCallback(int signum) noexcept -> void
                 {
-                    for (auto &publisher : m_event_publishers)
+                    // Release publish before exit(Roudi receives runtime close before publisher destruction)
+                    for(auto &publisher : m_event_publishers)
                     {
-                        publisher.second->shutdown(false);
+                        publisher.second.reset();
                     }
+                    std::exit(signum);
                 };
 
                 /**
@@ -152,8 +151,8 @@ namespace archXplore
                                     uint64_t a6, uint64_t a7, uint64_t a8) -> void
                 {
                     // Send syscall event
-                    m_event_publishers[vcpu_index]->publish(
-                        true, cpu::ThreadEvent_t::SyscallApiTag, m_event_counters[vcpu_index]++, cpu::SyscallAPI_t());
+                    m_event_publishers.at(vcpu_index)->publish(
+                        true, cpu::ThreadEvent_t::SyscallApiTag, m_event_counters.at(vcpu_index)++, cpu::SyscallAPI_t());
                 };
 
                 /**
@@ -238,13 +237,9 @@ namespace archXplore
                     }
 
                     // First time executing instruction
-                    if (__glibc_unlikely(m_last_inst_map.find(vcpu_index) == m_last_inst_map.end()))
+                    if(__glibc_likely(m_inst_counters.at(vcpu_index) != 0))
                     {
-                        m_last_inst_map[vcpu_index] = cpu::StaticInst_t();
-                    }
-                    else
-                    {
-                        cpu::StaticInst_t &last_inst = m_last_inst_map[vcpu_index];
+                        cpu::StaticInst_t &last_inst = m_last_insts.at(vcpu_index);
                         // Add next pc to last executed instruction
                         last_inst.br_info.target_pc = inst.pc;
                         if (last_inst.pc != inst.pc + inst.len)
@@ -252,12 +247,12 @@ namespace archXplore
                             last_inst.br_info.redirect = true;
                         }
                         // Send instruction
-                        m_event_publishers[vcpu_index]->publish(
-                            false, cpu::ThreadEvent_t::InsnTag, m_event_counters[vcpu_index]++, last_inst);
+                        m_event_publishers.at(vcpu_index)->publish(
+                            false, cpu::ThreadEvent_t::InsnTag, m_event_counters.at(vcpu_index)++, last_inst);
                     }
                     // Update last executed instruction
-                    cpu::StaticInst_t &cur_inst = m_last_inst_map[vcpu_index];
-                    cur_inst.uid = m_inst_counters[vcpu_index]++;
+                    cpu::StaticInst_t &cur_inst = m_last_insts.at(vcpu_index);
+                    cur_inst.uid = m_inst_counters.at(vcpu_index)++;
                     cur_inst.pc = inst.pc;
                     cur_inst.opcode = inst.opcode;
                     cur_inst.len = inst.len;
@@ -276,7 +271,7 @@ namespace archXplore
                 static auto memoryAccess(unsigned int vcpu_index, qemu_plugin_meminfo_t info,
                                          uint64_t vaddr, void *userdata) -> void
                 {
-                    cpu::StaticInst_t &cur_inst = m_last_inst_map[vcpu_index];
+                    cpu::StaticInst_t &cur_inst = m_last_insts.at(vcpu_index);
                     cur_inst.mem_info.vaddr = vaddr;
                     cur_inst.mem_info.len = qemu_plugin_mem_size_shift(info);
                     cur_inst.mem_info.is_store = qemu_plugin_mem_is_store(info);
@@ -285,6 +280,8 @@ namespace archXplore
             public:
                 // Application name
                 static std::string m_app_name;
+                // Runtime name
+                static std::string m_runtime;
                 // Process information
                 static ProcessID_t m_pid;
                 // Boot hart ID
@@ -293,18 +290,20 @@ namespace archXplore
                 static HartID_t m_max_harts;
 
             private:
+                // Shared Resource Lock
+                static std::mutex m_shared_resource_mutex;
                 // Instruction counter for each VCPU
                 static std::unordered_map<HartID_t, EventID_t> m_inst_counters;
                 // Event counter for each VCPU
                 static std::unordered_map<HartID_t, EventID_t> m_event_counters;
                 // Last executed instructions for each VCPU
-                static std::unordered_map<HartID_t, cpu::StaticInst_t> m_last_inst_map;
+                static std::unordered_map<HartID_t, cpu::StaticInst_t> m_last_insts;
+                // Event publisher
+                static std::unordered_map<HartID_t, std::unique_ptr<EventPublisher>> m_event_publishers;
                 // Instruction cache
                 static InstCache_t m_inst_cache;
                 // Mutex for instruction cache
                 static std::shared_mutex m_inst_cache_mutex;
-                // Event publisher
-                static std::unordered_map<HartID_t, std::unique_ptr<EventPublisher>> m_event_publishers;
             };
 
         } // namespace qemu

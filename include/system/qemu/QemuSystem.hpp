@@ -45,9 +45,12 @@ namespace archXplore
                 auto cleanUp() noexcept(false) -> void override
                 {
                     // Shutdown QEMU Subprocesses
-                    for (auto &qemu_subprocess : m_qemu_subprocesses)
+                    for (auto &process : m_processes)
                     {
-                        qemu_subprocess->kill(2);
+                        if(!process->is_completed)
+                        {
+                            m_qemu_subprocesses.at(process->pid)->kill(0);
+                        }
                     }
                 };
 
@@ -67,13 +70,22 @@ namespace archXplore
                 };
 
                 /**
+                 * @brief Get the QEMU App Name
+                 * @param guest_process Process to be booted
+                 * @return QEMU App Name
+                 */
+                auto getQemuRuntimeName(Process *guest_process) const -> std::string
+                {
+                    return getAppName() + "_QEMU_Process_" + std::to_string(guest_process->pid);
+                };
+
+                /**
                  * @brief New Qemu Process
                  * @param guest_process Process to be booted
                  */
                 auto newQemuProcess(Process *guest_process) -> void
                 {
                     // Boot QEMU Process
-
                     std::vector<std::string> command_vec;
                     // QEMU Location
                     std::string qemu_location = executablePath() + "/qemu/qemu-riscv64";
@@ -82,7 +94,9 @@ namespace archXplore
                     std::string plugin_prefix = "-plugin";
                     command_vec.push_back(plugin_prefix);
 
-                    std::string plugin_cmd = executablePath() + "/libInstrumentPlugin.so" + ",AppName=" + getAppName() +
+                    std::string plugin_cmd = executablePath() + "/libInstrumentPlugin.so" +
+                                             ",AppName=" + getAppName() +
+                                             ",Runtime=" + getQemuRuntimeName(guest_process) +
                                              ",ProcessID=" + std::to_string(guest_process->pid) +
                                              ",BootHart=" + std::to_string(guest_process->boot_hart) +
                                              ",MaxHarts=" + std::to_string(guest_process->max_harts);
@@ -112,14 +126,13 @@ namespace archXplore
                     m_qemu_subprocesses.emplace_back(new subprocess::Popen(
                         command_vec,
                         subprocess::input{subprocess::PIPE},
-                        subprocess::output{subprocess::PIPE},
-                        subprocess::error{subprocess::PIPE}));
-                    
+                        subprocess::output{subprocess::PIPE}));
+
                     // Boot harts for this process
-                    getCPUPtr(guest_process->boot_hart)->scheduleStartupEvent();
-                    for (HartID_t hart_offset = 1; hart_offset < guest_process->max_harts; hart_offset++)
+                    for (HartID_t hart_offset = 0; hart_offset < guest_process->max_harts; hart_offset++)
                     {
-                        getCPUPtr(guest_process->boot_hart + hart_offset)->scheduleWakeUpMonitorEvent();
+                        auto cpu = getCPUPtr(guest_process->boot_hart + hart_offset);
+                        cpu->setProcess(guest_process);
                     }
                 };
 

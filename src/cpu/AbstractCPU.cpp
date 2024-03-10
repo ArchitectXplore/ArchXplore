@@ -117,11 +117,23 @@ namespace archXplore
         {
             return m_hart_id;
         };
+
         auto AbstractCPU::setISS(std::unique_ptr<iss::AbstractISS> iss) -> void
         {
             sparta_assert((iss != nullptr), "Setting iss to nullptr");
             iss->setCPU(this);
             m_iss = std::move(iss);
+        };
+
+        auto AbstractCPU::setProcess(system::Process *process) -> void
+        {
+            m_process = process;
+            if(process->boot_hart == m_hart_id)
+            {
+                scheduleStartupEvent();
+            } else {
+                scheduleWakeUpMonitorEvent();
+            }
         };
 
     } // namespace cpu
