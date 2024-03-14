@@ -3,7 +3,6 @@
 #include "sparta/sparta.hpp"
 #include "sparta/log/Tap.hpp"
 #include "sparta/utils/SpartaAssert.hpp"
-#include "system/AbstractSystem.hpp"
 
 namespace archXplore
 {
@@ -17,13 +16,12 @@ namespace archXplore
          * @param name The name of this object.
          * @param desc The description of this object.
          */
-        ClockedObject(TreeNode *parent, const std::string &name)
-            : TreeNode(parent, name, name + " clocked object"){};
+        ClockedObject(TreeNode *parent, const std::string &name);
 
         /**
          * Destructor for the ClockedObject class.
          */
-        ~ClockedObject(){};
+        ~ClockedObject();
 
         /**
          * Set the clock domain for this object.
@@ -31,71 +29,58 @@ namespace archXplore
          * @param freq The frequency of the clock domain.
          * @return A pointer to this object.
          */
-        ClockedObject *setClockDomain(uint32_t rank, const sparta::Clock::Frequency &freq)
-        {
-            // sparta_assert(rank != 0, "Cannot use rank 0 as it is reserved for the global clock domain.");
-            m_freq = freq;
-            m_rank = rank;
-            return this;
-        };
+        ClockedObject *setClockDomain(uint32_t rank, const sparta::Clock::Frequency &freq);
 
         /**
          * Set the clock frequency for this object.
          * @param freq The frequency of the clock domain.
          * @return A pointer to this object.
          */
-        ClockedObject *setClockFrequency(const sparta::Clock::Frequency &freq)
-        {
-            m_freq = freq;
-            return this;
-        };
+        ClockedObject *setClockFrequency(const sparta::Clock::Frequency &freq);
 
         /**
          * Set the clock rank for this object.
          * @param rank The rank of the clock domain.
          * @return A pointer to this object.
          */
-        ClockedObject *setRank(uint32_t rank)
-        {
-            // sparta_assert(rank != 0, "Cannot use rank 0 as it is reserved for the global clock domain.");
-            m_rank = rank;
-            return this;
-        };
+        ClockedObject *setRank(uint32_t rank);
 
         /**
-         * onConfiguring_ is called by the TreeNode when it is being configured.
-         * This is where we register the clock domain with the system.
+         * Get the clock rank for this object.
+         * @return The rank of the clock domain.
          */
-        void onConfiguring_() override
-        {
-            auto sys = archXplore::system::AbstractSystem::getSystemPtr();
-            sys->registerClockDomain(this, m_rank, m_freq);
-        };
+        int32_t getRank();
 
         /**
-         * onBindTreeEarly_ is called by the TreeNode when it is being bound to the tree.
-         * This is where we call the topology builder if one has been registered.
+         * Get the clock frequency for this object.
+         * @return The frequency of the clock domain.
          */
-        void onBindTreeEarly_() override
-        {
-            buildTopology();
-        };
+        sparta::Clock::Frequency getClockFrequency();
 
-        virtual void buildTopology()
-        {
-            std::cerr << SPARTA_CURRENT_COLOR_RED
-                      << "\n[Error] Please implement the buildTopology function in your ClockedObject derived class["
-                      << getLocation() << "] "
-                      << "in python!\n"
-                      << SPARTA_CURRENT_COLOR_NORMAL
-                      << std::endl;
-            std::exit(-1);
-        };
+        /**
+         * @brief OnConfiguring is called by the TreeNode when it is being configured.
+         * This is where we set up the clock domain and frequency.
+         */
+        void onConfiguring_() override;
+
+        /**
+         * @brief onBindTreeEarly is called by the TreeNode when it is being bound to the tree.
+         * This is where we set up the clock domain and frequency.
+         */
+        void onBindTreeEarly_() override;
+
+        /**
+         * @brief buildTopology is called by the TreeNode when it is being bound to the tree.
+         * This is where we build the topology of the object.
+         */
+        virtual void buildTopology(){};
 
     private:
+        // Flag to check if the clock domain has been set
+        bool m_clock_domain_set = false;
         // Private data members
-        uint32_t m_rank = 0;
-        sparta::Clock::Frequency m_freq = 1000;
+        int32_t m_rank = -1;
+        sparta::Clock::Frequency m_freq = -1;
     };
 
     /**

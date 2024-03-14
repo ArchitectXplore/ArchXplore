@@ -11,11 +11,14 @@
 #include "sparta/events/EventSet.hpp"
 #include "sparta/events/UniqueEvent.hpp"
 
+#include "ClockedObject.hpp"
+
 #include "utils/ThreadPool.hpp"
 #include "cpu/AbstractCPU.hpp"
 #include "iss/AbstractISS.hpp"
 
 #include "system/Process.hpp"
+
 
 namespace archXplore
 {
@@ -28,9 +31,6 @@ namespace archXplore
 
     namespace system
     {
-        class AbstractSystem;
-
-        extern AbstractSystem *g_system_ptr;
 
         struct clockDomain_t
         {
@@ -48,7 +48,7 @@ namespace archXplore
             std::map<sparta::Clock::Frequency, clockDomain_t> domains;
         };
 
-        class AbstractSystem : public sparta::RootTreeNode
+        class AbstractSystem : public ClockedObject
         {
         public:
 
@@ -178,8 +178,8 @@ namespace archXplore
              */
             static inline auto getSystemPtr() -> AbstractSystem *
             {
-                sparta_assert((g_system_ptr != nullptr), "Can't get system pointer before build it\n");
-                return g_system_ptr;
+                sparta_assert((m_system_ptr != nullptr), "Can't get system pointer before build it\n");
+                return m_system_ptr;
             };
 
             /**
@@ -193,7 +193,7 @@ namespace archXplore
              * @param freq Clock frequency
              * @param nodes Nodes that belong to the clock domain
              */
-            auto registerClockDomain(TreeNode *node, const uint32_t &rank, const sparta::Clock::Frequency &freq) -> void;
+            auto registerClockDomain(sparta::TreeNode *node, const uint32_t &rank, const sparta::Clock::Frequency &freq) -> void;
 
         public:
             // System parameters
@@ -243,6 +243,12 @@ namespace archXplore
 
             //! Default debug logger
             sparta::log::MessageSource m_debug_logger;
+
+            // Root TreeNode
+            sparta::RootTreeNode m_root_node;
+
+            // System ptr
+            static AbstractSystem *m_system_ptr;
         };
 
         class PseudoSystem : public AbstractSystem
@@ -254,6 +260,7 @@ namespace archXplore
             auto createISS() -> std::unique_ptr<iss::AbstractISS> override;
             auto registerCPU(cpu::AbstractCPU *cpu) -> void override;
         };
+        
 
     } // namespace system
 } // namespace archXplore

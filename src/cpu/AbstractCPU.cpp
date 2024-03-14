@@ -109,8 +109,8 @@ namespace archXplore
 
         auto AbstractCPU::getSystemPtr() -> system::AbstractSystem *
         {
-            sparta_assert((system::g_system_ptr != nullptr), "System was not instantiated!");
-            return system::g_system_ptr;
+            sparta_assert((system::AbstractSystem::getSystemPtr() != nullptr), "System was not instantiated!");
+            return system::AbstractSystem::getSystemPtr();
         };
 
         auto AbstractCPU::getHartID() -> const HartID_t

@@ -4,25 +4,25 @@ namespace archXplore
 {
     namespace system
     {
-        AbstractSystem *g_system_ptr = new PseudoSystem();
-
         AbstractSystem::AbstractSystem() : AbstractSystem(sparta::Clock::Frequency(1000)){};
 
         AbstractSystem::AbstractSystem(const sparta::Clock::Frequency &freq)
-            : RootTreeNode("System"), m_global_event_set(this),
+            : ClockedObject(nullptr, "SystemClockedObject"), m_root_node("SystemRoot"), 
+              m_global_event_set(this), m_system_freq(freq),
               m_info_logger(this, INFO_LOG, getName() + " Info Messages"),
               m_debug_logger(this, DEBUG_LOG, getName() + " Debug Messages"),
               m_warn_logger(this, WARN_LOG, getName() + " Warning Messages"),
-              m_system_freq(freq), m_multithread_interval(1000 * freq)
+              m_multithread_interval(1000 * freq)
         {
-            g_system_ptr = this;
+            // Add AbstractSystem as a child of the root node
+            m_root_node.addChild(this);
+            // Set the global system pointer
+            m_system_ptr = this;
             // Create clock domains 0 as global clock domain
-            this->registerClockDomain(this, 0, freq);
+            this->setClockDomain(0, freq);
         };
 
-        AbstractSystem::~AbstractSystem()
-        {
-        };
+        AbstractSystem::~AbstractSystem(){};
 
         auto AbstractSystem::getCPUCount() -> uint32_t
         {
@@ -66,11 +66,11 @@ namespace archXplore
         auto AbstractSystem::build() -> void
         {
             // Enter configuring state
-            enterConfiguring();
+            m_root_node.enterConfiguring();
             // Build clock domains and rank schedulers
             buildClockDomains();
             // Finalize tree and create resources
-            enterFinalized();
+            m_root_node.enterFinalized();
             // Register instruction set simulator
             registerISS();
         };
@@ -78,7 +78,7 @@ namespace archXplore
         auto AbstractSystem::finalize() -> void
         {
             // Bind tree early
-            bindTreeEarly();
+            m_root_node.bindTreeEarly();
             // Finalize scheduler
             for (auto &it : m_rank_domains)
             {
@@ -92,9 +92,9 @@ namespace archXplore
                 m_thread_pool = std::make_unique<utils::ThreadPool>(num_threads);
             }
             // Bind tree late
-            bindTreeLate();
+            m_root_node.bindTreeLate();
             // Enter teardown state
-            enterTeardown();
+            m_root_node.enterTeardown();
             // Boot the system and enter teardown state
             bootSystem();
         };
@@ -177,7 +177,7 @@ namespace archXplore
                 auto &rank_domain = it.second;
                 rank_domain.scheduler = std::make_unique<sparta::Scheduler>("Scheduler_Rank_" + std::to_string(rank_id));
                 rank_domain.clock_manager = std::make_unique<sparta::ClockManager>(rank_domain.scheduler.get());
-                rank_domain.clock_manager->makeRoot(this, "Rank" + std::to_string(rank_id) + "Clock");
+                rank_domain.clock_manager->makeRoot(&m_root_node, "Rank" + std::to_string(rank_id) + "Clock");
                 rank_domain.clock = rank_domain.clock_manager->makeClock("Rank" + std::to_string(rank_id) + "_clock",
                                                                          rank_domain.clock_manager->getRoot(), m_system_freq);
                 for (auto &domain : rank_domain.domains)
@@ -247,7 +247,7 @@ namespace archXplore
             m_cpus.push_back(cpu);
         };
 
-        auto AbstractSystem::registerClockDomain(TreeNode *node, const uint32_t &rank, const sparta::Clock::Frequency &freq) -> void
+        auto AbstractSystem::registerClockDomain(sparta::TreeNode *node, const uint32_t &rank, const sparta::Clock::Frequency &freq) -> void
         {
             if (m_rank_domains.find(rank) == m_rank_domains.end())
             {
@@ -274,6 +274,8 @@ namespace archXplore
             return nullptr;
         };
         auto PseudoSystem::registerCPU(cpu::AbstractCPU *cpu) -> void{};
+
+        AbstractSystem* AbstractSystem::m_system_ptr = new PseudoSystem();
 
     } // namespace system
 
