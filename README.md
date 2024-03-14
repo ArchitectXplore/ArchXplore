@@ -95,11 +95,11 @@ Million instructions per second:  53.22448876167542
 ```
 
 ## Features
-- [ ] Support python configuration files for simulation.
-- [ ] Support for multi-threads simulation.
-- [ ] Support for multi-processes simulation.
-- [x] Integrate DRAMSim3 for cycle accurate memory modeling.
-- [x] Design modeling framework for coherent caches.
-- [x] Design modeling framework for network on chip(NoC).
-- [x] Top-down analysis framework for microarchitecture exploration.
-- [x] Pthread/OpenMP API instrumentation for synchronization-aware multi-core simulation.
+- [x] Support python configuration files for simulation.
+- [x] Support for multi-threads simulation.
+- [x] Support for multi-processes simulation.
+- [ ] Integrate DRAMSim3 for cycle accurate memory modeling.
+- [ ] Design modeling framework for coherent caches.
+- [ ] Design modeling framework for network on chip(NoC).
+- [ ] Top-down analysis framework for microarchitecture exploration.
+- [ ] Pthread/OpenMP API instrumentation for synchronization-aware multi-core simulation.
