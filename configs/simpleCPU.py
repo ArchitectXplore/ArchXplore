@@ -35,23 +35,20 @@ class myCPU(SimpleCPU) :
     def __init__(self, system, name) :
         super().__init__(system, name)
         self.Params.fetch_width = 64
+    
+    def buildTopology(self) :
+        pass
 
-threads = 64
+threads = 1
 
-system = system.QemuSystem()
+system = System.QemuSystem()
 
-# system.attachTap("debug", sys.stdout)
-
-# system.attachTap("trace", sys.stdout)
-
-system.cpus = [myCPU(system, "SimpleCPU" + str(i)).setRank(i) for i in range(threads)]
-
-system.interval = system.MAX_INTERVAL
+system.cpus = [myCPU(system, "SimpleCPU" + str(i)).setPhase(System.BOUND_PHASE) for i in range(threads)]
 
 system.build()
 
-# for i in range(threads):
-system.newProcess(blackscholes(16))
+for i in range(threads):
+    system.newProcess(helloWorld())
     
 start = time.perf_counter()
 
@@ -63,7 +60,7 @@ total_instructions = 0
 for cpu in system.cpus:
     total_instructions += cpu.Statistics.totalInstRetired
 
-print("Time elapsed: ", end-start)
+print("Host time elapsed(s): ", end-start)
+print("Guest time elapsed(s): ", system.getElapsedTime())
 print("Total instructions executed: ", total_instructions)
 print("Million instructions per second: ", total_instructions/1000000/(end-start))
-    

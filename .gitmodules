@@ -10,3 +10,6 @@
 [submodule "ext/iceoryx"]
 	path = ext/iceoryx
 	url = git@github.com:eclipse-iceoryx/iceoryx.git
+[submodule "ext/DRAMsim3"]
+	path = ext/DRAMsim3
+	url = git@github.com:umd-memsys/DRAMsim3.git

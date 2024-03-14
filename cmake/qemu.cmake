@@ -18,7 +18,3 @@ ExternalProject_Add(qemu
 )
 
 ExternalProject_Get_Property(qemu BINARY_DIR)
-
-link_directories(${BINARY_DIR})
-
-list(APPEND ArchXplore_LIBS qemu-riscv64)

@@ -2,6 +2,8 @@
 # ===========================
 set(ICEORYX_DIR "${ArchXplore_BASE}/ext/iceoryx/iceoryx_meta")
 
+set(TOML_CONFIG OFF)
+
 add_subdirectory(${ICEORYX_DIR} iceoryx)
 
 find_package(iceoryx_platform REQUIRED)

@@ -49,6 +49,9 @@ include(cmake/qemu.cmake)
 # iceoryx setup
 include(cmake/iceoryx.cmake)
 
+# DRAMSim3 setup
+include(cmake/DRAMSim3.cmake)
+
 # Add Source Directory
 add_subdirectory(src)
 
@@ -56,7 +59,6 @@ add_subdirectory(src)
 add_library(InstrumentPlugin SHARED src/iss/qemu/InstrumentPlugin.cpp)
 target_include_directories(InstrumentPlugin PUBLIC ${ArchXplore_INCLUDES})
 target_link_libraries(InstrumentPlugin PRIVATE iceoryx_posh::iceoryx_posh)
-add_dependencies(InstrumentPlugin qemu)
 
 # IPC Service
 add_executable(IPCService src/iss/IPCService.cpp)
@@ -68,7 +70,6 @@ add_executable(ArchXplore src/python/ArchXplorePy.cpp ${ArchXplore_SRCS})
 target_include_directories(ArchXplore PUBLIC ${ArchXplore_INCLUDES})
 target_link_libraries(ArchXplore PRIVATE ${ArchXplore_LIBS})
 set_target_properties(ArchXplore PROPERTIES POSITION_INDEPENDENT_CODE ON)
-add_dependencies(ArchXplore qemu)
 
 # Generate Python Stubs
 add_custom_command(TARGET ArchXplore POST_BUILD

@@ -7,6 +7,15 @@
 namespace archXplore
 {
 
+    enum SchedulePhase_t
+    {
+        UNKNOWN_PHASE,
+        SCHEDULE_PHASE,
+        BOUND_PHASE,
+        WEAVE_PHASE,
+        NUM_PHASES
+    };
+
     class ClockedObject : public sparta::TreeNode
     {
     public:
@@ -25,25 +34,46 @@ namespace archXplore
 
         /**
          * Set the clock domain for this object.
+         * @param phase The phase of the clock domain.
          * @param rank The rank of the clock domain.
          * @param freq The frequency of the clock domain.
          * @return A pointer to this object.
          */
-        ClockedObject *setClockDomain(uint32_t rank, const sparta::Clock::Frequency &freq);
+        ClockedObject *setClockDomain(const SchedulePhase_t &phase,
+                                      const uint32_t &rank, const sparta::Clock::Frequency &freq);
 
         /**
          * Set the clock frequency for this object.
          * @param freq The frequency of the clock domain.
          * @return A pointer to this object.
          */
-        ClockedObject *setClockFrequency(const sparta::Clock::Frequency &freq);
+        ClockedObject *setFrequency(const sparta::Clock::Frequency &freq);
 
         /**
          * Set the clock rank for this object.
          * @param rank The rank of the clock domain.
          * @return A pointer to this object.
          */
-        ClockedObject *setRank(uint32_t rank);
+        ClockedObject *setRank(const uint32_t& rank);
+
+        /**
+         * Set the clock phase for this object.
+         * @param phase The phase of the clock domain.
+         * @return A pointer to this object.
+         */
+        ClockedObject *setPhase(const SchedulePhase_t& phase);
+
+        /**
+         * Set the clock domain for this object to the bound phase.
+         * @return A pointer to this object.
+         */
+        ClockedObject *toBoundPhase();
+
+        /**
+         * Set the clock domain for this object to the weave phase.
+         * @return A pointer to this object.
+         */
+        ClockedObject *toWeavePhase();
 
         /**
          * Get the clock rank for this object.
@@ -56,6 +86,12 @@ namespace archXplore
          * @return The frequency of the clock domain.
          */
         sparta::Clock::Frequency getClockFrequency();
+
+        /**
+         * Get the clock phase for this object.
+         * @return The phase of the clock domain.
+         */
+        SchedulePhase_t getPhase();
 
         /**
          * @brief OnConfiguring is called by the TreeNode when it is being configured.
@@ -79,6 +115,7 @@ namespace archXplore
         // Flag to check if the clock domain has been set
         bool m_clock_domain_set = false;
         // Private data members
+        SchedulePhase_t m_phase = UNKNOWN_PHASE;
         int32_t m_rank = -1;
         sparta::Clock::Frequency m_freq = -1;
     };

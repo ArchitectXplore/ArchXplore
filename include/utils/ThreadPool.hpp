@@ -21,7 +21,7 @@ namespace archXplore
                 for (size_t i = 0; i < numThreads; ++i)
                 {
                     workers.emplace_back([this]
-                    {
+                                         {
                         while (true) {
                             std::function<void()> task;
 
@@ -38,11 +38,9 @@ namespace archXplore
                             }
 
                             task(); // Execute the task
-                        } 
-                    }
-                );
+                        } });
                 }
-            }
+            };
 
             ~ThreadPool()
             {
@@ -57,7 +55,7 @@ namespace archXplore
                 {
                     worker.join();
                 }
-            }
+            };
 
             template <typename Func, typename... Args>
             auto enqueue(Func &&func, Args &&...args) -> std::future<decltype(func(args...))>
@@ -78,7 +76,7 @@ namespace archXplore
 
                 condition.notify_one();
                 return task->get_future();
-            }
+            };
 
         private:
             std::vector<std::thread> workers;

@@ -10,6 +10,7 @@
 #include "sparta/simulation/ClockManager.hpp"
 #include "sparta/events/EventSet.hpp"
 #include "sparta/events/UniqueEvent.hpp"
+#include "sparta/events/StartupEvent.hpp"
 
 #include "ClockedObject.hpp"
 
@@ -32,26 +33,28 @@ namespace archXplore
     namespace system
     {
 
-        struct clockDomain_t
+        struct ClockDomain_t
         {
             sparta::Clock::Handle clock;
             std::vector<sparta::TreeNode *> nodes;
         };
 
-        struct rankDomain_t
+        struct RankDomain_t
         {
+            std::string name;
             // Rank scheduler and clock used by sub-thread
             sparta::Clock::Handle clock;
             std::unique_ptr<sparta::Scheduler> scheduler;
             std::unique_ptr<sparta::ClockManager> clock_manager;
             // Tree nodes that belong to this clock domain
-            std::map<sparta::Clock::Frequency, clockDomain_t> domains;
+            std::map<sparta::Clock::Frequency, ClockDomain_t> domains;
         };
+
+        typedef std::map<uint32_t, RankDomain_t> PhaseDomain_t;
 
         class AbstractSystem : public ClockedObject
         {
         public:
-
             static constexpr const char *INFO_LOG = "info";
             static constexpr const char *WARN_LOG = sparta::log::categories::WARN_STR;
             static constexpr const char *DEBUG_LOG = sparta::log::categories::DEBUG_STR;
@@ -134,14 +137,22 @@ namespace archXplore
             auto startUpTick(const sparta::Scheduler::Tick &tick) -> void;
 
             /**
-             * @brief Handle the start of multi-threaded simulation
+             * @brief Run phase event
+             * @param phase Schedule phase
+             * @return True if the phase is done, false otherwise
              */
-            auto handlePreTickEvent() -> void;
+            auto runPhaseEvent(PhaseDomain_t& phase) -> bool;
 
             /**
-             * @brief Handle the end of multi-threaded simulation
+             * @brief Handle the bound-weave event
              */
-            auto handlePostTickEvent() -> void;
+            auto handleBoundWeaveEvent() -> void;
+
+
+            /**
+             * @brief Build the rank domains of the system
+             */
+            auto buildRank(RankDomain_t& rank) -> void;
 
             /**
              * @brief Build the clock domains of the system
@@ -190,24 +201,20 @@ namespace archXplore
 
             /**
              * @brief Register a clock domain to the system
-             * @param freq Clock frequency
              * @param nodes Nodes that belong to the clock domain
+             * @param phase Schedule phase of the clock domain
+             * @param rank Rank of the clock domain
+             * @param freq Clock frequency of the clock domain
              */
-            auto registerClockDomain(sparta::TreeNode *node, const uint32_t &rank, const sparta::Clock::Frequency &freq) -> void;
+            auto registerClockDomain(TreeNode *node, const SchedulePhase_t &phase,
+                                     const uint32_t &rank, const sparta::Clock::Frequency &freq) -> void;
 
         public:
             // System parameters
-            bool m_multithread_enabled = false;
+            uint64_t m_max_threads = 0;
+            bool m_bound_weave_enabled = false;
+            uint64_t m_bound_weave_interval = 1e6; // 1us
 
-            sparta::Scheduler::Tick m_tick_limit;
-            uint64_t m_multithread_interval;
-
-            // Maximum interval for multi-threading simulation
-            const uint64_t MAX_INTERVAL = sparta::Scheduler::INDEFINITE;
-
-            // Workload parameters
-            std::string m_workload_path;
-            std::list<std::string> m_workload_args;
             // Workloads
             std::vector<Process *> m_processes;
 
@@ -217,21 +224,22 @@ namespace archXplore
         protected:
             // Thread pool for multi-threading simulation
             std::unique_ptr<utils::ThreadPool> m_thread_pool;
-            std::deque<std::future<bool>> m_thread_futures;
 
-            // Rank & Clock domains
-            std::map<uint32_t, rankDomain_t> m_rank_domains;
+            RankDomain_t m_schedule_phase;
+
+            // Bound and weave phases domain
+            PhaseDomain_t m_bound_phase;
+            PhaseDomain_t m_weave_phase;
 
             // Main scheduler
             sparta::Scheduler *m_main_scheduler;
             sparta::Clock::Handle m_global_clock;
 
-            // Rank tick end event
-            std::unique_ptr<sparta::UniqueEvent<sparta::SchedulingPhase::Update>> m_pre_tick_event;
-            std::unique_ptr<sparta::UniqueEvent<sparta::SchedulingPhase::PostTick>> m_post_tick_event;
-
             // Global Event Set
             sparta::EventSet m_global_event_set;
+
+            // Bound-Weave event
+            sparta::UniqueEvent<sparta::SchedulingPhase::Tick> m_bound_weave_event;
 
             bool m_finalized = false;
 

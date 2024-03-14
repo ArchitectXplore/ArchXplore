@@ -29,12 +29,14 @@ namespace archXplore
             // Bind ClockedObject
             pybind11::class_<ClockedObject, PyClockedObject, sparta::TreeNode>(parent, "ClockedObject")
                 .def(pybind11::init<sparta::TreeNode *, const std::string &>())
-                .def("setClockDomain", &ClockedObject::setClockDomain,
-                     pybind11::return_value_policy::reference, "Set the clock domain of the object")
-                .def("setClockFrequency", &ClockedObject::setClockFrequency,
+                .def("setFrequency", &ClockedObject::setFrequency,
                      pybind11::return_value_policy::reference, "Set the clock frequency of the object")
                 .def("setRank", &ClockedObject::setRank,
                      pybind11::return_value_policy::reference, "Set the rank of the object")
+                .def("toBoundPhase", &ClockedObject::toBoundPhase,
+                     pybind11::return_value_policy::reference, "Convert the object to bound phase")
+                .def("toWeavePhase", &ClockedObject::toWeavePhase,
+                     pybind11::return_value_policy::reference, "Convert the object to weave phase")
                 .def("buildTopology", &ClockedObject::buildTopology, "Build object's topology");
 
 
@@ -49,13 +51,15 @@ namespace archXplore
                 .def("newProcess", &archXplore::system::AbstractSystem::newProcess, py::keep_alive<1, 2>(),
                      pybind11::return_value_policy::reference, "Create a new process")
                 .def("getElapsedTime", &archXplore::system::AbstractSystem::getElapsedTime, "Get the elapsed time of the system")
-                .def_readwrite("interval", &archXplore::system::AbstractSystem::m_multithread_interval,
-                               "Multithreading interval (in ticks)")
-                .def_readonly("MAX_INTERVAL", &archXplore::system::AbstractSystem::MAX_INTERVAL, "Maximum multithreading interval (in ticks)");
-                
+                .def_readwrite("max_threads", &archXplore::system::AbstractSystem::m_max_threads, "Maximum number of threads")
+                .def_readwrite("interval", &archXplore::system::AbstractSystem::m_bound_weave_interval,
+                               "Multithreading interval (in ticks)");
+
             // Bind QemuSystem
             pybind11::class_<archXplore::system::qemu::QemuSystem, archXplore::system::AbstractSystem>(system, "QemuSystem", pybind11::dynamic_attr())
                 .def(pybind11::init<>());
+
+
         };
     } // namespace python
 

@@ -9,24 +9,35 @@ namespace archXplore
 
     ClockedObject::~ClockedObject(){};
 
-    ClockedObject *ClockedObject::setClockDomain(uint32_t rank, const sparta::Clock::Frequency &freq)
+    ClockedObject *ClockedObject::setClockDomain(const SchedulePhase_t &phase, const uint32_t &rank, const sparta::Clock::Frequency &freq)
     {
-        m_clock_domain_set = true;
-        m_freq = freq;
-        m_rank = rank;
+        m_clock_domain_set = true, m_phase = phase, m_freq = freq, m_rank = rank;
         return this;
     };
 
-    ClockedObject *ClockedObject::setClockFrequency(const sparta::Clock::Frequency &freq)
+    ClockedObject *ClockedObject::setFrequency(const sparta::Clock::Frequency &freq)
     {
-        setClockDomain(m_rank, freq);
-        return this;
+        return setClockDomain(m_phase, m_rank, freq);
     };
 
-    ClockedObject *ClockedObject::setRank(uint32_t rank)
+    ClockedObject *ClockedObject::setRank(const uint32_t &rank)
     {
-        setClockDomain(rank, m_freq);
-        return this;
+        return setClockDomain(m_phase, rank, m_freq);
+    };
+
+    ClockedObject *ClockedObject::setPhase(const SchedulePhase_t &phase)
+    {
+        return setClockDomain(phase, m_rank, m_freq);
+    };
+
+    ClockedObject *ClockedObject::toBoundPhase()
+    {
+        return setPhase(BOUND_PHASE);
+    };
+
+    ClockedObject *ClockedObject::toWeavePhase()
+    {
+        return setPhase(WEAVE_PHASE);
     };
 
     int32_t ClockedObject::getRank()
@@ -95,15 +106,49 @@ namespace archXplore
         return m_freq;
     };
 
+    SchedulePhase_t ClockedObject::getPhase()
+    {
+        if (isConfigured())
+        {
+            return m_phase;
+        }
+        else
+        {
+            if (m_phase == SchedulePhase_t::UNKNOWN_PHASE)
+            {
+                sparta::TreeNode *parent = getParent();
+                while (parent)
+                {
+                    ClockedObject *parent_obj = dynamic_cast<ClockedObject *>(parent);
+                    if (parent_obj)
+                    {
+                        return parent_obj->getPhase();
+                    }
+                    else
+                    {
+                        parent = parent->getParent();
+                    }
+                }
+                return SchedulePhase_t::UNKNOWN_PHASE;
+            }
+            else
+            {
+                return m_phase;
+            }
+        }
+        return m_phase;
+    };
+
     void ClockedObject::onConfiguring_()
     {
         if (m_clock_domain_set)
         {
             // Propagate the clock domain from parent to children
+            m_phase = getPhase();
             m_freq = getClockFrequency();
             m_rank = getRank();
             auto sys = archXplore::system::AbstractSystem::getSystemPtr();
-            sys->registerClockDomain(this, m_rank, m_freq);
+            sys->registerClockDomain(this, m_phase, m_rank, m_freq);
         }
     };
 

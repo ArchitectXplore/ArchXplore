@@ -130,7 +130,7 @@ namespace archXplore
             m_process = process;
             if(process->boot_hart == m_hart_id)
             {
-                scheduleStartupEvent();
+                 scheduleStartupEvent();
             } else {
                 scheduleWakeUpMonitorEvent();
             }
