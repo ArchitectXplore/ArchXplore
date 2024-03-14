@@ -18,7 +18,7 @@ class blackscholes(Process):
         self.executable = "/opt/riscvBenchSuite/parsec-benchmark/pkgs/apps/blackscholes/inst/amd64-linux.gcc/bin/blackscholes"
         self.arguments = [
             str(threads) , 
-            "/opt/riscvBenchSuite/parsec-benchmark/pkgs/apps/blackscholes/run/in_16.txt",
+            "/opt/riscvBenchSuite/parsec-benchmark/pkgs/apps/blackscholes/run/in_4K.txt",
             "/opt/riscvBenchSuite/parsec-benchmark/pkgs/apps/blackscholes/run/benchmark.out"
         ]
         
@@ -39,11 +39,13 @@ class myCPU(SimpleCPU) :
     def buildTopology(self) :
         pass
 
-threads = 1
+threads = 64
 
 system = System.QemuSystem()
 
-system.cpus = [myCPU(system, "SimpleCPU" + str(i)).setPhase(System.BOUND_PHASE) for i in range(threads)]
+boundArea = ClockedObject(system, "boundArea").toBoundPhase()
+
+system.cpus = [myCPU(boundArea, "SimpleCPU" + str(i)).setRank(i) for i in range(threads)]
 
 system.build()
 
