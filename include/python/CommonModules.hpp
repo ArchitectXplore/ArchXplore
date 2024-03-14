@@ -37,16 +37,11 @@ namespace archXplore
                      pybind11::return_value_policy::reference, "Set the rank of the object")
                 .def("buildTopology", &ClockedObject::buildTopology, "Build object's topology");
 
-            // Bind ISS Modules
-            auto iss = python::EmbeddedModule::createSubPackage(parent, "iss");
-            pybind11::class_<archXplore::iss::AbstractISS>(iss, "__AbstractISS");
-            pybind11::class_<archXplore::iss::qemu::QemuISS, archXplore::iss::AbstractISS>(iss, "QemuISS")
-                .def(pybind11::init<>());
 
             /* Bind System Modules */
-            auto system = python::EmbeddedModule::createSubPackage(parent, "system");
+            auto system = python::EmbeddedModule::createSubPackage(parent, "System");
             // Bind AbstractSystem
-            pybind11::class_<archXplore::system::AbstractSystem, sparta::RootTreeNode>(system, "__AbstractSystem", pybind11::dynamic_attr())
+            pybind11::class_<archXplore::system::AbstractSystem, archXplore::ClockedObject>(system, "__AbstractSystem", pybind11::dynamic_attr())
                 .def("run", &archXplore::system::AbstractSystem::run,
                      pybind11::arg("tick") = sparta::Scheduler::INDEFINITE,
                      "Run the system for a given number of ticks (default: indefinite)")
