@@ -56,7 +56,7 @@ cd ArchXplore
 * Build conda environment:
 
 ```
-cd ext/map/scripts/create_conda_env.sh <Your environment name> run 
+./ext/map/scripts/create_conda_env.sh <Your environment name> run 
 
 conda activate <Your environment name>
 ```
