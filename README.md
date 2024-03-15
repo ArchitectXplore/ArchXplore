@@ -76,7 +76,7 @@ make -j$(nproc)
 * Start inter process communication server:
 
 ```
-./IPCServer &
+./IPCService &
 ```
 
 * Demonstrate the usage of ArchXplore by running a simple CPU simulation:
