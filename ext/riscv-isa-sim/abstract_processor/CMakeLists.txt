@@ -1,0 +1,7 @@
+file(GLOB ABSTRACT_PROCESSOR_SRC ./*.cc)
+add_library(abstract_processor ${ABSTRACT_PROCESSOR_SRC})
+target_include_directories(abstract_processor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+# target_link_libraries(abstract_processor PRIVATE riscv)
+target_link_libraries(abstract_processor PRIVATE softfloat)
+find_library(DL_LIBRARY dl)
+target_link_libraries(riscv PRIVATE ${DL_LIBRARY})

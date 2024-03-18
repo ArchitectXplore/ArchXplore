@@ -1,0 +1,19 @@
+build/
+*.gch
+autom4te.cache/
+.*.swp
+*.o
+*.d
+.gdb_history
+.#*
+*~
+# playground
+spikebuild/
+# abstract_processor
+isatest/
+.vscode/
+log.txt
+gitpatch
+isatest_logs
+core.*
+*.spike.dump
