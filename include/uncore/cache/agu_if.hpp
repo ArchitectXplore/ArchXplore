@@ -2,7 +2,7 @@
 #define __AGU_IF_HPP__
 #include <cinttypes>
 namespace archXplore{
-namespace cache{
+namespace uncore{
 
 class AGUIf{
 public:
@@ -13,6 +13,6 @@ public:
     virtual inline auto calcLineOffset(const uint64_t& addr) const -> uint64_t= 0;
 }; // class AGUIf
 
-} // namespace cache
+} // namespace uncore
 } // namespace archXplore
 #endif // __AGU_IF_HPP__

@@ -2,9 +2,10 @@
 #define __TREEPLRU_HPP__
 #include "replacement_if.hpp"
 #include <bitset>
+#include "sparta/utils/MathUtils.hpp"
 #include "sparta/utils/SpartaAssert.hpp"
 namespace archXplore{
-namespace cache{
+namespace uncore{
 #define MAX_NUM_WAYS 256
 class TreePLRU: public ReplacementIf{
 protected:
@@ -13,7 +14,7 @@ protected:
 public:
     TreePLRU(const uint32_t& num_ways):
         ReplacementIf(num_ways),
-        _num_tree_levels(utils::floor_log2<uint32_t>(num_ways))
+        _num_tree_levels(sparta::utils::floor_log2<uint32_t>(num_ways))
     {
         reset();
     }
@@ -74,6 +75,6 @@ public:
 }; // class TreePLRU
 
 
-} // namespace cache
+} // namespace uncore
 } // namespace archXplore
 #endif // __TREEPLRU_HPP__

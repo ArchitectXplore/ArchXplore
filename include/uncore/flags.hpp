@@ -23,7 +23,7 @@ public:
         return *this;
     } 
     // 
-    constexpr T get(){
+    constexpr T get() const{
         return _flag;
     }
     void set(const T& val) noexcept{
@@ -39,7 +39,7 @@ public:
         _flag &= ~val;
     }
 
-    constexpr bool isSet(const T& val) {
+    constexpr bool isSet(const T& val) const{
         return (val & _flag);
     }
     constexpr bool allSet(const T& val) {

@@ -1,8 +1,8 @@
 #ifndef __BASIC_CACHE_BLOCK_HPP__
 #define __BASIC_CACHE_BLOCK_HPP__
 namespace archXplore{
-namespace cache{
-#include "baisc_cache_set.hpp"
+namespace uncore{
+#include "basic_cache_set.hpp"
 template <class CacheLineT>
 class BasicCacheBlock{
     static_assert(std::is_base_of<BasicCacheLine ,CacheLineT>::value, "CacheLineT must be a subclass of BasicCacheLine");
@@ -10,9 +10,9 @@ protected:
     using CacheSetT = BasicCacheSet<CacheLineT>;
     using VecIt = typename std::vector<CacheSetT>::iterator;
     using CVecIt = typename std::vector<CacheSetT>::const_iterator;
-    uint32_t _num_sets;
-    std::vector<CacheSetT> _sets;
-    const AGUIf* _aguif;
+    uint32_t m_num_sets;
+    std::vector<CacheSetT> m_sets;
+    const AGUIf* m_aguif;
 public:
     BasicCacheBlock(
         const uint32_t& num_sets,
@@ -21,52 +21,52 @@ public:
         const AGUIf* aguif,
         const ReplacementIf& rep
     ):
-        _num_sets(num_sets)
+        m_num_sets(num_sets)
     {
-        _sets.resize(num_sets);
-        _aguif = aguif;
+        m_sets.resize(num_sets);
+        m_aguif = aguif;
     }
     BasicCacheBlock() = default;
 
     auto setAGUIf(const AGUIf* aguif) -> void{
-        _aguif = aguif;
+        m_aguif = aguif;
     } 
     auto getAGUIf() const -> const AGUIf*{
-        return _aguif;
+        return m_aguif;
     }
 
     inline auto peekCacheSet(const uint64_t& addr) const -> const CacheSetT * {
-        uint32_t set_idx = _aguif->calcIndex(addr);
-        assert(set_idx < _num_sets);
-        return &_sets[set_idx];
+        uint32_t set_idx = m_aguif->calcIndex(addr);
+        assert(set_idx < m_num_sets);
+        return &m_sets[set_idx];
     }
     inline auto getCacheSet(const uint64_t& addr)  -> CacheSetT * {
-        uint32_t set_idx = _aguif->calcIndex(addr);
-        assert(set_idx < _num_sets);
-        return &_sets[set_idx];
+        uint32_t set_idx = m_aguif->calcIndex(addr);
+        assert(set_idx < m_num_sets);
+        return &m_sets[set_idx];
     }
     inline auto peekCacheSetByIdx(const uint32_t& set_idx) const -> const CacheSetT * {
-        assert(set_idx < _num_sets);
-        return &_sets[set_idx];
+        assert(set_idx < m_num_sets);
+        return &m_sets[set_idx];
     }
     inline auto getCacheSetByIdx(const uint32_t& set_idx) -> CacheSetT * {
-        assert(set_idx < _num_sets);
-        return &_sets[set_idx];
+        assert(set_idx < m_num_sets);
+        return &m_sets[set_idx];
     }
     
     inline auto getLine(const uint64_t& addr) -> CacheLineT *{
-        uint64_t tag = _aguif->calcTag(addr);
+        uint64_t tag = m_aguif->calcTag(addr);
         return getCacheSet(addr)->getLine(tag);
     }
     inline auto peekLine(const uint64_t& addr) const -> const CacheLineT *{
-        uint64_t tag = _aguif->calcTag(addr);
+        uint64_t tag = m_aguif->calcTag(addr);
         return peekCacheSet(addr)->peekLine(tag);
     }
     inline auto getLineByIdxWay(const uint32_t& set_idx, const uint32_t& way) -> CacheLineT *{
-        return _sets[set_idx]->getLineByWay(way);
+        return m_sets[set_idx]->getLineByWay(way);
     }
     inline auto peekLineByIdxWay(const uint32_t& set_idx, const uint32_t& way) const -> const CacheLineT *{
-        return _sets[set_idx]->peekLineByWay(way);
+        return m_sets[set_idx]->peekLineByWay(way);
     }
 
     inline auto getLRULine(const uint64_t& addr) -> CacheLineT *{
@@ -84,14 +84,31 @@ public:
     }
 
     inline auto getNumSets() const -> uint32_t {
-        return _num_sets;
+        return m_num_sets;
     }
 
-    auto begin() -> VecIt {return _sets.begin();}
-    auto end() -> VecIt {return _sets.end();}
-    auto begin() const -> CVecIt {return _sets.begin();}
-    auto end() const -> CVecIt {return _sets.end();}
+    inline auto read(const uint64_t& addr, const uint32_t& size, uint8_t* data) const -> bool{
+        CacheLineT* line = peekLine(addr);
+        if(line == nullptr){
+            return false;
+        }
+        return line->read(addr, size, data);
+    }
+    inline auto write(const uint64_t& addr, const uint32_t& size, const uint8_t* data) -> bool{
+        CacheLineT* line = getLine(addr);
+        if(line == nullptr){
+            return false;
+        }
+        return line->write(addr, size, data);
+    }
+
+    auto begin() -> VecIt {return m_sets.begin();}
+    auto end() -> VecIt {return m_sets.end();}
+    auto begin() const -> CVecIt {return m_sets.begin();}
+    auto end() const -> CVecIt {return m_sets.end();}
 
 
 }; // class BasicCacheBlock
+} // namespace uncore
+} // namespace archXplore
 #endif // __BASIC_CACHE_BLOCK_HPP__

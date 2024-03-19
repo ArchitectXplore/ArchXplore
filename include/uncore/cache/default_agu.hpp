@@ -1,10 +1,11 @@
 #ifndef __DEFAULT_AGU_HPP__
 #define __DEFAULT_AGU_HPP__
 #include "agu_if.hpp"
+#include "sparta/utils/MathUtils.hpp"
 #include "sparta/utils/SpartaAssert.hpp"
 #include <cassert>
 namespace archXplore{
-namespace cache{
+namespace uncore{
 /* DefaultAddrDecoder: decodes a 64-bit address. 
 * Assume one Block
 * Assuming line_size==stride, the address is decoded as below
@@ -26,14 +27,14 @@ public:
         _stride(stride),
         _num_ways(num_ways)
     {
-        assert(utils::is_power_of_2(line_size));
-        assert(utils::is_power_of_2(stride));
+        assert(sparta::utils::is_power_of_2(line_size));
+        assert(sparta::utils::is_power_of_2(stride));
         _num_sets = (size * 1024) / (line_size * num_ways);
         _offset_mask = line_size - 1;
         _addr_mask = ~uint64_t(_offset_mask);
         _index_mask = _num_sets - 1;
-        _index_shift = utils::floor_log2(stride);
-        _tag_shift = utils::floor_log2(_num_sets * stride);
+        _index_shift = sparta::utils::floor_log2(stride);
+        _tag_shift = sparta::utils::floor_log2(_num_sets * stride);
     }
 
     virtual inline auto calcVAddr(const uint64_t& op1, const uint64_t& op2) const -> uint64_t override{
@@ -64,6 +65,6 @@ protected:
     uint64_t _addr_mask;
 }; // class DefaultAGU
 
-} // namespace cache
+} // namespace uncore
 } // namespace archXplore
 #endif // __DEFAULT_AGU_HPP__

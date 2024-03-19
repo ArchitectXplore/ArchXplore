@@ -2,7 +2,7 @@
 #define __REPLACEMENT_IF_HPP__
 #include <cinttypes>
 namespace archXplore{
-namespace cache{
+namespace uncore{
 
 class ReplacementIf{
 protected:
@@ -21,6 +21,6 @@ public:
     virtual auto getMRUWay() -> uint32_t = 0;
 }; // class ReplacementIf
 
-} // namespace cache
+} // namespace uncore
 } // namespace archXplore
 #endif // __REPLACEMENT_IF_HPP__

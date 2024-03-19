@@ -1,9 +1,8 @@
 #ifndef __BASIC_CACHE_LINE_HPP__
 #define __BASIC_CACHE_LINE_HPP__
 #include <cinttypes>
-#include "agu_if.hpp"
 namespace archXplore{
-namespace cache{
+namespace uncore{
 enum BasicCacheLineState{
     InValid,
     Shared,
@@ -11,27 +10,23 @@ enum BasicCacheLineState{
     Exclusive,
     Modified
 }; // enum BasicCacheLineState
-// ! implement MI in BasicCacheLine
+
 class BasicCacheLine{
-protected:
-    uint64_t _tag = 0;
-    uint64_t _addr = 0;
-    BasicCacheLineState _state = BasicCacheLineState::InValid; 
 public: 
     BasicCacheLine() = default;
     BasicCacheLine(const BasicCacheLine&) = default;
     BasicCacheLine& operator=(const BasicCacheLine&) = default;
     virtual ~BasicCacheLine() = default;
 
-    auto setTag(const uint64_t& t) -> void {_tag = t;}
-    auto getTag() const -> uint64_t {return _tag;}
-    auto setAddr(const uint64_t& a) -> void {_addr = a;}
-    auto getAddr() const -> uint64_t {return _addr;}
+    auto setTag(const uint64_t& t) -> void {m_tag = t;}
+    auto getTag() const -> uint64_t {return m_tag;}
+    auto setAddr(const uint64_t& a) -> void {m_addr = a;}
+    auto getAddr() const -> uint64_t {return m_addr;}
 
     virtual auto set(const uint64_t& addr, const uint64_t& tag) -> void{
-        _tag = tag;
-        _addr = addr;
-        _state = BasicCacheLineState::Modified;
+        m_tag = tag;
+        m_addr = addr;
+        m_state = BasicCacheLineState::Modified;
     }
     virtual auto unset() -> void {
         setInValid();
@@ -43,10 +38,17 @@ public:
     virtual auto write(const uint64_t& offset, const uint32_t& size, uint8_t* buff) -> bool {
         return true;
     }
-    virtual inline auto setModified() -> void {_state = BasicCacheLineState::Modified;}
-    virtual inline auto setInValid() -> void {_state = BasicCacheLineState::InValid;}
-    virtual inline auto setState(const BasicCacheLineState& s) -> void {_state = s;}
-    virtual inline auto isValid() const -> bool {return !(_state == BasicCacheLineState::InValid);}
-
+    inline auto setModified() -> void {m_state = BasicCacheLineState::Modified;}
+    inline auto setInValid() -> void {m_state = BasicCacheLineState::InValid;}
+    inline auto setState(const BasicCacheLineState& s) -> void {m_state = s;}
+    inline auto isValid() const -> bool {return !(m_state == BasicCacheLineState::InValid);}
+    inline auto isDirty() const -> bool {return (m_state == BasicCacheLineState::Modified);}
+protected:
+    uint64_t m_tag = 0;
+    uint64_t m_addr = 0;
+    BasicCacheLineState m_state = BasicCacheLineState::InValid; 
 }; // class BasicCacheLine
+
+} // namespace uncore
+} // namespace archXplore
 #endif // __BASIC_CACHE_LINE_HPP__
