@@ -8,6 +8,7 @@
 #include <sparta/ports/DataPort.hpp>
 #include <sparta/ports/Port.hpp>
 #include <sparta/log/Tap.hpp>
+#include <sparta/statistics/Histogram.hpp> 
 
 #include "python/EmbeddedModule.hpp"
 
@@ -285,6 +286,105 @@ namespace archXplore
                         return unit->getPortSet();
                     },
                     py::return_value_policy::reference);
+        
+        py::class_<HistogramBase>(m, "HistogramBase")
+            .def(
+                "getStandardDeviation",
+                [](HistogramBase &self)
+                {
+                    return self.getStandardDeviation();
+                },
+                py::return_value_policy::copy)
+            .def(
+                "getMeanBinCount",
+                [](HistogramBase &self)
+                {
+                    return self.getMeanBinCount();
+                },
+                py::return_value_policy::copy)
+            .def(
+                "getAggValues",
+                [](HistogramBase &self)
+                {
+                    return self.getAggValues().get();
+                },
+                py::return_value_policy::copy)
+            .def(
+                "getRegularBin",
+                [](HistogramBase &self)
+                {
+                    const std::vector<sparta::Counter> &vec = self.getRegularBin();
+                    std::vector<sparta::Counter::counter_type> retVec(vec.size());
+                    std::transform(vec.begin(), vec.end(), retVec.begin(),
+                    [](const sparta::Counter& counter) -> sparta::Counter::counter_type {
+                        return counter.get();
+                    });
+                    return new std::vector<sparta::Counter::counter_type>(retVec);
+                },
+                py::return_value_policy::copy)
+            .def(
+                "getUnderflowBin",
+                [](HistogramBase &self)
+                {
+                    return self.getUnderflowBin().get();
+                }
+            )
+            .def(
+                "getOverflowBin",
+                [](HistogramBase &self)
+                {
+                    return self.getOverflowBin().get();
+                }
+            )
+            .def(
+                "getUnderflowProbability",
+                [](HistogramBase &self)
+                {
+                    return self.getUnderflowProbability();
+                }
+            )
+            .def(
+                "getOverflowProbability",
+                [](HistogramBase &self)
+                {
+                    return self.getOverflowProbability();
+                }
+            )
+            .def(
+                "recomputeRegularBinProbabilities",
+                [](HistogramBase &self)
+                {
+                    return self.recomputeRegularBinProbabilities();
+                }
+            )
+            .def(
+                "getHistogramUpperValue",
+                [](HistogramBase &self)
+                {
+                    return self.getHistogramUpperValue();
+                }
+            )
+            .def(
+                "getHistogramLowerValue",
+                [](HistogramBase &self)
+                {
+                    return self.getHistogramLowerValue(); 
+                }
+            )
+            .def(
+                "getNumBins",
+                [](HistogramBase &self)
+                {
+                    return self.getNumBins();
+                }
+            )
+            .def(
+                "getNumValuesPerBin",
+                [](HistogramBase &self)
+                {
+                    return self.getNumValuesPerBin();
+                }
+            );
         }
     }
 }
