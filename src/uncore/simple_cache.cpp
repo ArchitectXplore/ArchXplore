@@ -223,7 +223,7 @@ auto SimpleCache::m_genEvictReqAndSend() -> void{
     m_evict_req_valid = true;
     uint64_t timestamp = getClock()->currentCycle();
     auto pair = m_evict_map.insert(std::make_pair(timestamp, std::unique_ptr<uint8_t[]>(new uint8_t[m_line_size])));
-    memcpy(pair.first->second.get(), m_evict_line->getData(), m_line_size);
+    m_evict_line->read(0, m_line_size, pair.first->second.get());
     m_evict_req = MemReq(
         m_inflight_req.cpuid,
         m_inflight_req.threadId,
@@ -268,7 +268,7 @@ auto SimpleCache::m_forwardResp() -> void{
     return;
 }
 auto SimpleCache::m_handleMSHRRespAndSend() -> void{
-    memcpy(m_evict_line->getData(), m_mshr_resp.payload.data, m_line_size);
+    m_evict_line->write(0, m_line_size, m_mshr_resp.payload.data);
     m_mshr_req_valid = false; 
     m_mshr_resp_valid = false;
     m_lower_resp_credit_out.send(1);// mshr req is done

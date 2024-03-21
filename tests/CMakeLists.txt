@@ -12,3 +12,6 @@ add_subdirectory(QemuPerf)
 
 # ThreadPool Test
 add_subdirectory(ThreadPool)
+
+# uncore Test
+add_subdirectory(uncoreTest)

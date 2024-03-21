@@ -35,10 +35,6 @@ Payload& operator=(const Payload& other){
 	size = other.size;
 	return *this;
 }
-~Payload(){
-    if(must_move && data!= nullptr)
-        delete[] data;
-}
 
 };
 inline std::ostream& operator<<(std::ostream& os, const Payload& p){

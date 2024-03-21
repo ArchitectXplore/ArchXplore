@@ -1,8 +1,8 @@
 #ifndef __BASIC_CACHE_BLOCK_HPP__
 #define __BASIC_CACHE_BLOCK_HPP__
+#include "basic_cache_set.hpp"
 namespace archXplore{
 namespace uncore{
-#include "basic_cache_set.hpp"
 template <class CacheLineT>
 class BasicCacheBlock{
     static_assert(std::is_base_of<BasicCacheLine ,CacheLineT>::value, "CacheLineT must be a subclass of BasicCacheLine");
@@ -19,11 +19,11 @@ public:
         const uint32_t& num_ways,
         const CacheLineT& default_line,
         const AGUIf* aguif,
-        const ReplacementIf& rep
+        const ReplacementIf* rep
     ):
         m_num_sets(num_sets)
     {
-        m_sets.resize(num_sets);
+        m_sets.resize(num_sets, CacheSetT(num_ways, default_line, aguif, rep));
         m_aguif = aguif;
     }
     BasicCacheBlock() = default;
@@ -88,7 +88,7 @@ public:
     }
 
     inline auto read(const uint64_t& addr, const uint32_t& size, uint8_t* data) const -> bool{
-        CacheLineT* line = peekLine(addr);
+        const CacheLineT* line = peekLine(addr);
         if(line == nullptr){
             return false;
         }

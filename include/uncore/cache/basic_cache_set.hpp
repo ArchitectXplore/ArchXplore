@@ -1,14 +1,14 @@
 #ifndef __BASIC_CACHE_SET_HPP__
 #define __BASIC_CACHE_SET_HPP__
 #include <cinttypes>
-#include "agu_if.hpp"
-#include "replacement_if.hpp"
-#include "basic_cache_line.hpp"
 #include <vector>
 #include <memory>
 #include <cassert>
 #include <type_traits>
-#include "utils/MathUtils.hpp"
+#include "agu_if.hpp"
+#include "replacement_if.hpp"
+#include "basic_cache_line.hpp"
+#include "sparta/utils/MathUtils.hpp"
 
 namespace archXplore{
 namespace uncore{
@@ -26,11 +26,11 @@ public:
         const uint32_t& num_ways,
         const CacheLineT& default_line,
         const AGUIf* agu,
-        const ReplacementIf& rep
+        const ReplacementIf* rep
     ):
         m_num_ways(num_ways)
     {
-        m_replacement_policy.reset(rep.clone());
+        m_replacement_policy.reset(rep->clone());
         m_ways.resize(num_ways, default_line);
     }
     BasicCacheSet(const BasicCacheSet& BasicCacheSet):
@@ -38,6 +38,12 @@ public:
         m_ways(BasicCacheSet.m_ways)
     {
         m_replacement_policy.reset(BasicCacheSet.m_replacement_policy->clone());
+    }
+    BasicCacheSet& operator=(const BasicCacheSet& BasicCacheSet){
+        m_num_ways = BasicCacheSet.m_num_ways;
+        m_ways = BasicCacheSet.m_ways;
+        m_replacement_policy.reset(BasicCacheSet.m_replacement_policy->clone());
+        return *this;
     }
     BasicCacheSet() = default;
     auto peekLine(const uint64_t& tag) const -> const CacheLineT*  {
@@ -95,7 +101,7 @@ public:
 
     auto getForReplacement() -> CacheLineT* {
         uint32_t victim_way = getInvalidLineIdx();
-        if(likely(victim_way == m_num_ways))
+        if(victim_way == m_num_ways)
             victim_way = m_replacement_policy->getLRUWay();
         return &m_ways[victim_way];
     }

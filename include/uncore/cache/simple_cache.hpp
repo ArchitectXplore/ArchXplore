@@ -7,21 +7,35 @@
 #include "sparta/simulation/TreeNode.hpp"
 #include "sparta/simulation/ParameterSet.hpp"
 #include "basic_cache_block.hpp"
-#include "basic_cache_line.hpp"
 #include "default_agu.hpp"
 #include "treeplru.hpp"
 #include "uncore/mem_if.hpp"
 #include "uncore/mem_pkt.hpp"
-#include "uncore/cache/replacement_if.hpp"
 
 namespace archXplore{
 namespace uncore{
 class CacheLine: public BasicCacheLine{
 public:
+    CacheLine(const CacheLine& other){
+        m_tag = other.m_tag;
+        m_addr = other.m_addr;
+        m_state = other.m_state;
+        m_data.reset(new uint8_t[other.m_size]);
+    }
+    CacheLine& operator=(const CacheLine& other){
+        m_tag = other.m_tag;
+        m_addr = other.m_addr;
+        m_state = other.m_state;
+        m_size = other.m_size;
+        m_data.reset(new uint8_t[other.m_size]);
+        memcpy(m_data.get(), other.m_data.get(), other.m_size);
+        return *this;
+    }
     CacheLine(const uint64_t& tag, const uint64_t& addr, const uint32_t& size, const uint8_t* data){
         m_tag = tag;
         m_addr = addr;
         m_state = BasicCacheLineState::Modified;
+        m_size = size;
         m_data.reset(new uint8_t[size]);
         memcpy(m_data.get(), data, size);
     }
@@ -29,6 +43,7 @@ public:
         m_tag = tag;
         m_addr = addr;
         m_state = BasicCacheLineState::Modified;
+        m_size = size;
         m_data.reset(new uint8_t[size]);
         memset(m_data.get(), 0, size);
     }
@@ -40,16 +55,13 @@ public:
         memcpy(m_data.get() + offset, buff, size);
         return true;
     }
-    auto getData() const -> uint8_t* {
-        return m_data.get();
-    }
 protected:
     using BasicCacheLine::m_tag;
     using BasicCacheLine::m_addr;
     using BasicCacheLine::m_state;
+    uint32_t m_size;
     std::unique_ptr<uint8_t[]> m_data;
 }; // class CacheLine
-
 
 class SimpleCacheParameterSet: public sparta::ParameterSet{
 public:
@@ -90,8 +102,8 @@ protected:
     bool m_is_write_allocate;
     bool m_is_write_back;
     std::unique_ptr<BasicCacheBlock<CacheLine>> m_cache;
-    std::unique_ptr<DefaultAGU> m_agu;
-    std::unique_ptr<TreePLRU> m_replacement_policy;
+    std::unique_ptr<AGUIf> m_agu;
+    std::unique_ptr<ReplacementIf> m_replacement_policy;
 
     // registers
     MemReq m_inflight_req;
