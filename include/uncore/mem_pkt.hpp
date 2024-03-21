@@ -64,6 +64,7 @@ public:
          * architecture-specific code. For example, SPARC uses them to
          * represent ASIs.
          */
+        INVALID                     = 0x00000000,   
         ARCH_BITS                   = 0x000000FF,
 		READ 						= 0X00000001,
 		WRITE 						= 0X00000002,	
@@ -270,6 +271,7 @@ public:
          * architecture-specific code. For example, SPARC uses them to
          * represent ASIs.
          */
+        INVALID                     = 0x00000000,   
         ARCH_BITS                   = 0x000000FF,
 		READ 						= 0X00000001,
 		WRITE 						= 0X00000002,	
@@ -466,13 +468,13 @@ public:
 	uint64_t pa;
 	Payload payload;
 	SnoopReq() = default;
-	SnoopReq(const uint32_t cpuid, const uint32_t& threadId, const uint64_t& timestamp, const uint32_t& pa, const uint32_t& va, 
+	SnoopReq(const uint32_t cpuid, const uint32_t& threadId, const uint64_t& timestamp, const uint64_t& pa, const uint64_t& va, 
 		const FlagsType& flag, const Payload& data):
 		cpuid(cpuid), pa(pa), va(va), threadId(threadId), timestamp(timestamp),
 		flag(flag), payload(data)
 		{	
 		}
-	SnoopReq(const uint32_t cpuid, const uint32_t& threadId, const uint64_t& timestamp, const uint32_t& pa, const uint32_t& va, 
+	SnoopReq(const uint32_t cpuid, const uint32_t& threadId, const uint64_t& timestamp, const uint64_t& pa, const uint64_t& va, 
 		const FlagsType& flag, const uint32_t& size, uint8_t* data_ptr):
 		cpuid(cpuid), pa(pa), va(va), threadId(threadId), timestamp(timestamp),
 		flag(flag), payload(Payload{size, data_ptr})

@@ -1,4 +1,5 @@
 #include "uncore/cache/simple_cache.hpp"
+#include "python/EmbeddedModule.hpp"
 namespace archXplore{
 namespace uncore{
 SimpleCache::SimpleCache(sparta::TreeNode * n, const SimpleCacheParameterSet * p):
@@ -280,6 +281,7 @@ auto SimpleCache::m_handleMSHRRespAndSend() -> void{
     }
     m_handleHit();
 }
+REGISTER_SPARTA_UNIT(SimpleCache, SimpleCacheParameterSet);
 
 } // namespace uncore
 } // namespace archXplore

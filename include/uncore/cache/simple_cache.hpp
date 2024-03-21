@@ -81,6 +81,7 @@ public:
 class SimpleCache: public sparta::Unit, public MemIf{
 public:
     SimpleCache(sparta::TreeNode * n, const SimpleCacheParameterSet * p);
+    static constexpr char name[] = "simple_cache";
     virtual auto sendMemReq(const MemReq& req) -> void override;
     virtual auto receiveMemResp(const MemResp& resp) -> void override;
     virtual auto sendMemResp(const MemResp& resp) -> void override;

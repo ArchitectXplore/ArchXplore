@@ -42,11 +42,17 @@ public:
     constexpr bool isSet(const T& val) const{
         return (val & _flag);
     }
-    constexpr bool allSet(const T& val) {
+    constexpr bool allSet(const T& val) const{
         return ((val & _flag) == val);
     }
-    constexpr bool noneSet(const T& val) {
+    constexpr bool noneSet(const T& val) const{
         return ((val & _flag) == 0);
+    }
+    bool operator ==(const T& val) const{
+        return (_flag == val);
+    }
+    bool operator !=(const T& val) const{
+        return (_flag != val);
     }
 
 
