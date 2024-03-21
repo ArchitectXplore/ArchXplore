@@ -5,6 +5,7 @@
 #include "sparta/events/UniqueEvent.hpp"
 #include "sparta/simulation/Unit.hpp"
 #include "sparta/statistics/Counter.hpp"
+#include "sparta/statistics/Histogram.hpp"
 
 #include "system/Process.hpp"
 

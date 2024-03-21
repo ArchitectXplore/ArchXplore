@@ -17,6 +17,7 @@
 #include <sparta/log/Tap.hpp>
 #include <sparta/statistics/StatisticSet.hpp>
 #include <sparta/statistics/CounterBase.hpp>
+#include <sparta/statistics/Histogram.hpp>
 
 #include "ClockedObject.hpp"
 
@@ -89,7 +90,14 @@ namespace archXplore
         {                                                                                                                               \
             return m_statistics->getCounters();                                                                                         \
         }                                                                                                                               \
-                                                                                                                                        \
+        sparta::HistogramTreeNode *getHistogram(const std::string &name)                                                                        \
+        {                                                                                                                               \
+            return m_statistics->getHistogram(name);                                                                                      \
+        };                                                                                                                              \
+        const sparta::StatisticSet::HistogramTnVector getHistograms()                                                                         \
+        {                                                                                                                               \
+            return m_statistics->getHistograms();                                                                                         \
+        }                                                                                                                                                                                 \
     private:                                                                                                                            \
         sparta::StatisticSet *m_statistics;                                                                                             \
     };                                                                                                                                  \
@@ -165,14 +173,25 @@ namespace archXplore
                 },                                                                                                                      \
                 pybind11::return_value_policy::reference);                                                                              \
         }                                                                                                                               \
-        sparta::TreeNode::ChildrenVector statVec = curTn.getStatisticSet()->getChildren();                                              \
-        for (auto it = statVec.begin(); it != statVec.end(); ++it){                                                                     \
+        sparta::StatisticSet::CounterVector counterVec= curTn.getStatisticSet()->getCounters();                                              \
+        for (auto it = counterVec.begin(); it != counterVec.end(); ++it){                                                                     \
             const std::string &name = (*it)->getName();                                                                                 \
             statisticBind.def_property_readonly(                                                                                        \
                 name.c_str(),                                                                                                           \
                 [=](UnitClass##Statistics &self) {                                                                                      \
                     sparta::CounterBase *cntr = self.getCounter(name);                                                                  \
                     return cntr->get();                                                                                                 \
+                },                                                                                                                      \
+                pybind11::return_value_policy::reference);                                                                              \
+        }                                                                                                                               \
+        sparta::StatisticSet::HistogramTnVector histVec= curTn.getStatisticSet()->getHistograms();                                                      \
+        for (auto it = histVec.begin(); it != histVec.end(); ++it){                                                                     \
+            const std::string &name = (*it)->getName();                                                                                 \
+            statisticBind.def_property_readonly(                                                                                        \
+                name.c_str(),                                                                                                           \
+                [=](UnitClass##Statistics &self) {                                                                                      \
+                    sparta::HistogramTreeNode *hist= self.getHistogram(name);                                                                  \
+                    return hist;                                                                                                 \
                 },                                                                                                                      \
                 pybind11::return_value_policy::reference);                                                                              \
         }                                                                                                                               \

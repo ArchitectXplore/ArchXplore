@@ -287,31 +287,31 @@ namespace archXplore
                     },
                     py::return_value_policy::reference);
         
-        py::class_<HistogramBase>(m, "HistogramBase")
+        py::class_<HistogramTreeNode>(m, "HistogramTreeNode")
             .def(
                 "getStandardDeviation",
-                [](HistogramBase &self)
+                [](HistogramTreeNode &self)
                 {
                     return self.getStandardDeviation();
                 },
                 py::return_value_policy::copy)
             .def(
                 "getMeanBinCount",
-                [](HistogramBase &self)
+                [](HistogramTreeNode &self)
                 {
                     return self.getMeanBinCount();
                 },
                 py::return_value_policy::copy)
             .def(
                 "getAggValues",
-                [](HistogramBase &self)
+                [](HistogramTreeNode &self)
                 {
                     return self.getAggValues().get();
                 },
                 py::return_value_policy::copy)
             .def(
                 "getRegularBin",
-                [](HistogramBase &self)
+                [](HistogramTreeNode &self)
                 {
                     const std::vector<sparta::Counter> &vec = self.getRegularBin();
                     std::vector<sparta::Counter::counter_type> retVec(vec.size());
@@ -324,63 +324,63 @@ namespace archXplore
                 py::return_value_policy::copy)
             .def(
                 "getUnderflowBin",
-                [](HistogramBase &self)
+                [](HistogramTreeNode &self)
                 {
                     return self.getUnderflowBin().get();
                 }
             )
             .def(
                 "getOverflowBin",
-                [](HistogramBase &self)
+                [](HistogramTreeNode &self)
                 {
                     return self.getOverflowBin().get();
                 }
             )
             .def(
                 "getUnderflowProbability",
-                [](HistogramBase &self)
+                [](HistogramTreeNode &self)
                 {
                     return self.getUnderflowProbability();
                 }
             )
             .def(
                 "getOverflowProbability",
-                [](HistogramBase &self)
+                [](HistogramTreeNode &self)
                 {
                     return self.getOverflowProbability();
                 }
             )
             .def(
                 "recomputeRegularBinProbabilities",
-                [](HistogramBase &self)
+                [](HistogramTreeNode &self)
                 {
                     return self.recomputeRegularBinProbabilities();
                 }
             )
             .def(
                 "getHistogramUpperValue",
-                [](HistogramBase &self)
+                [](HistogramTreeNode &self)
                 {
                     return self.getHistogramUpperValue();
                 }
             )
             .def(
                 "getHistogramLowerValue",
-                [](HistogramBase &self)
+                [](HistogramTreeNode &self)
                 {
                     return self.getHistogramLowerValue(); 
                 }
             )
             .def(
                 "getNumBins",
-                [](HistogramBase &self)
+                [](HistogramTreeNode &self)
                 {
                     return self.getNumBins();
                 }
             )
             .def(
                 "getNumValuesPerBin",
-                [](HistogramBase &self)
+                [](HistogramTreeNode &self)
                 {
                     return self.getNumValuesPerBin();
                 }

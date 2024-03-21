@@ -18,6 +18,7 @@ namespace archXplore
                     : ParameterSet(parent){};
                 
                 PARAMETER(uint32_t, fetch_width, 4, "Fetch width of the CPU in bytes");
+
             };
 
             class SimpleCPU : public AbstractCPU
@@ -32,6 +33,8 @@ namespace archXplore
                 auto tick() -> void override;
 
                 static const char name[];
+
+                //sparta::HistogramTreeNode histogram_test;
 
             private:
                 const SimpleCPUParams *m_params;

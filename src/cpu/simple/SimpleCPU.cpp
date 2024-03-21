@@ -12,7 +12,11 @@ namespace archXplore
             const char SimpleCPU::name[] = "SimpleCPU";
 
             SimpleCPU::SimpleCPU(sparta::TreeNode *tn, const SimpleCPUParams *params)
-                : AbstractCPU(tn), m_params(params){};
+                : AbstractCPU(tn), m_params(params)
+                // histogram_test(this->getStatisticSet(),"histogramTest", "Histogram Test", 1, 10, 2)
+                {
+                    // histogram_test.addValue(1);
+                };
 
             SimpleCPU::~SimpleCPU(){};
 
