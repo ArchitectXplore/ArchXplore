@@ -55,7 +55,9 @@ protected:
     uint32_t m_req_queue_size;
 
     std::deque<MemReq> m_req_queue;
+    std::deque<MemReq> m_debug_req_queue;
     std::unordered_map<uint64_t, std::unique_ptr<uint8_t[]>> m_mem_map;
+    std::unordered_map<uint64_t, std::unique_ptr<uint8_t[]>> m_debug_mem_map;
 
     sparta::DataOutPort<MemReq> m_lower_req_out{&unit_port_set_, "lower_req_out", 1};
     sparta::DataInPort<uint32_t> m_lower_req_credit_in{&unit_port_set_, "lower_req_credit_in", 1};
@@ -63,12 +65,16 @@ protected:
     sparta::DataInPort<MemResp> m_lower_resp_in{&unit_port_set_, "lower_resp_in", 1};
     sparta::DataOutPort<uint32_t> m_lower_resp_credit_out{&unit_port_set_, "lower_resp_credit_out", 1};
 
+    sparta::DataOutPort<MemReq> m_debug_mem_req_out{&unit_port_set_, "debug_mem_req_out", 0};
+
     sparta::UniqueEvent<> m_send_req_event{&unit_event_set_, "enque_req", CREATE_SPARTA_HANDLER(RandomTester, m_sendReqCB)};
 
     auto m_lowerReqCreditInCB(const uint32_t & credit) -> void;
     auto m_initCB() -> void;
     auto m_sendReqCB() -> void;
     inline auto m_genRandReq() -> MemReq;
+    inline auto m_debugCloneReq(const MemReq& req) -> MemReq;
+
 
 }; // class RandomTester
 } // namespace uncore

@@ -206,7 +206,7 @@ auto SimpleCache::m_genMSHRReqAndSend() -> void{
     m_mshr_data.reset(new uint8_t[m_line_size]);
     m_mshr_req = MemReq(
         m_inflight_req.cpuid,
-        m_inflight_req.threadId,
+        m_inflight_req.threadid,
         getClock()->currentCycle(),
         m_inflight_req.pa,
         m_inflight_req.va,
@@ -227,7 +227,7 @@ auto SimpleCache::m_genEvictReqAndSend() -> void{
     m_evict_line->read(0, m_line_size, pair.first->second.get());
     m_evict_req = MemReq(
         m_inflight_req.cpuid,
-        m_inflight_req.threadId,
+        m_inflight_req.threadid,
         getClock()->currentCycle(),
         m_evict_line->getAddr(),
         m_evict_line->getAddr(),

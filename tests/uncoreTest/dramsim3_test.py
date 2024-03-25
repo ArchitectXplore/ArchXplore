@@ -14,12 +14,13 @@ rtn.setClock(clk)
 base_addr = 0x0
 size = 0x100
 num_cores = 2
+num_itr = 100
 
 t0 = RandomTester(rtn, "random_tester_0")
 t0.Params.base_addr = base_addr
 t0.Params.size = size
 t0.Params.cpuid = 0
-t0.Params.num_iters = 10000
+t0.Params.num_iters = num_itr
 t0.Params.seed = 114514
 t0.Params.req_stride = 5
 
@@ -27,7 +28,7 @@ t1 = RandomTester(rtn, "random_tester_1")
 t1.Params.base_addr = base_addr
 t1.Params.size = size
 t1.Params.cpuid = 1
-t1.Params.num_iters = 10000
+t1.Params.num_iters = num_itr
 t1.Params.seed = 114514
 t1.Params.req_stride = 3
 
@@ -39,6 +40,10 @@ dram.Params.num_ports = num_cores
 mem = FakeMemory(rtn, "fake_memory")
 mem.Params.base_addr = base_addr
 mem.Params.size = size
+
+correct_mem = FakeMemory(rtn, "correct_memory")
+correct_mem.Params.base_addr = base_addr
+correct_mem.Params.size = size
 
 
 rtn.enterConfiguring()
@@ -59,6 +64,10 @@ t1.Ports.lower_resp_credit_out << dram.Ports.upper_resp_credit_in_1
 # dram3 <> mem
 dram.Ports.lower_req_out << mem.Ports.upper_req_in
 mem.Ports.upper_resp_out << dram.Ports.lower_resp_in
+
+# tester <> mem
+t0.Ports.debug_mem_req_out << correct_mem.Ports.upper_req_in
+t1.Ports.debug_mem_req_out << correct_mem.Ports.upper_req_in
 
 print(t0.Ports.lower_resp_in.isBound())
 

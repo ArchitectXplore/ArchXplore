@@ -28,9 +28,18 @@ auto RandomTester::sendMemReq(const MemReq& req) -> void {
 auto RandomTester::receiveMemResp(const MemResp& resp) -> void {
     info_logger_ << "RandomTester: Received resp: " << resp << std::endl;
 
-    for(auto it = m_req_queue.begin(); it != m_req_queue.end(); it++){
+    for(auto it = m_req_queue.begin(), debug_it = m_debug_req_queue.begin(); 
+            it != m_req_queue.end() && debug_it != m_debug_req_queue.end(); it++, debug_it++){
         if(it->timestamp != resp.timestamp) continue;
         it->flag = MemReq::INVALID;
+        // check read correctness
+        if(it->flag.isSet(MemReq::READ) && resp.payload != debug_it->payload){
+            info_logger_ << "RandomTester: Read incorrect: " << debug_it->payload << " vs " << resp.payload << std::endl;
+            info_logger_ << "RandomTester: Read incorrect req: " << resp << std::endl;
+            info_logger_ << "RandomTester: Read incorrect debug req: " << *debug_it << std::endl;
+            info_logger_ << "RandomTester: Test failed" << std::endl;
+            exit(1);
+        }
         break;
     }
     // deque
@@ -38,7 +47,7 @@ auto RandomTester::receiveMemResp(const MemResp& resp) -> void {
         auto map_it = m_mem_map.find(m_req_queue.front().timestamp);
         m_mem_map.erase(map_it);
         debug_logger_ << "RandomTester: Dequeued req: " << m_req_queue.front() << std::endl;
-        m_req_queue.pop_front();
+        m_req_queue.pop_front();z
     }
 }
 auto RandomTester::sendMemResp(const MemResp& resp) -> void {
@@ -73,6 +82,9 @@ inline auto RandomTester::m_genRandReq() -> MemReq{
     addr += rand() % (m_line_size - size); // align
     uint64_t timestamp = getClock()->currentCycle();
     m_mem_map[timestamp].reset(new uint8_t[size]);
+    for(int i = 0; i < size; i++){
+        m_mem_map[timestamp].get()[i] = rand() % 256;
+    }
     return MemReq{
         m_cpuid,
         0, // threadid
@@ -95,6 +107,11 @@ auto RandomTester::m_sendReqCB() -> void{
             m_num_iters --;
             MemReq req = m_genRandReq();
             m_req_queue.push_back(req);
+            // clone for debug
+            MemReq debug_req = m_debugCloneReq(req);
+            m_debug_req_queue.push_back(debug_req);
+            // send req to debug mem 
+            m_debug_mem_req_out.send(debug_req);
             sendMemReq(req);
             info_logger_ << "RandomTester: Send req: " << req << std::endl;
         }
@@ -102,6 +119,21 @@ auto RandomTester::m_sendReqCB() -> void{
     // reschedule
     m_send_req_event.schedule(m_req_stride);
 }
+inline auto RandomTester::m_debugCloneReq(const MemReq& req) -> MemReq{
+    m_debug_mem_map[req.timestamp].reset(new uint8_t[req.payload.size]);
+    return MemReq(
+        req.cpuid,
+        req.threadid,
+        req.timestamp,
+        req.pa,
+        req.va,
+        0u,
+        req.flag.get(),
+        req.payload.size,
+        m_debug_mem_map[req.timestamp].get()
+    );
+}
+
 REGISTER_SPARTA_UNIT(RandomTester, RandomTesterParameterSet);
 
 } // namespace uncore

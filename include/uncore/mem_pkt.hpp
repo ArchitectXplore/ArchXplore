@@ -12,7 +12,7 @@ namespace archXplore{
 struct Payload{
 uint8_t* data = nullptr;
 uint32_t size = 0;
-bool operator==(const Payload& other){
+bool operator==(const Payload& other) const{
 	if(other.size == 0 && size == 0)
 		return true;
 	if(other.size!= size)
@@ -20,7 +20,7 @@ bool operator==(const Payload& other){
 	sparta_assert(other.data!= nullptr && data!= nullptr, "Payload data should not be null");
 	return std::memcmp(data, other.data, size);
 }
-bool operator!=(const Payload& other){
+bool operator!=(const Payload& other) const{
 	return !(*this == other);
 }
 Payload():data(nullptr), size(0){}
@@ -219,22 +219,22 @@ public:
 	MemReq() = default;
 
 	uint32_t cpuid = 0; // cpu id
-    uint32_t threadId = 0; // thread id
+    uint32_t threadid = 0; // thread id
     uint64_t timestamp = 0; //timestamp
     uint32_t pa = 0; // physical addr
     uint32_t va = 0; // virtual addr
     uint32_t pc = 0; // ! for 32 ISA
 	flag_t flag; // memory request type
 	Payload payload;
-	MemReq(const uint32_t cpuid, const uint32_t& threadId, const uint64_t& timestamp, const uint32_t& pa, const uint32_t& va, 
+	MemReq(const uint32_t& cpuid, const uint32_t& threadid, const uint64_t& timestamp, const uint32_t& pa, const uint32_t& va, 
 		const uint32_t& pc, const FlagsType& flag, const Payload& data):
-		cpuid(cpuid), pa(pa), va(va), threadId(threadId), timestamp(timestamp),
+		cpuid(cpuid), pa(pa), va(va), threadid(threadid), timestamp(timestamp),
 		pc(pc), flag(flag), payload(data)
 		{	
 		}
-	MemReq(const uint32_t cpuid, const uint32_t& threadId, const uint64_t& timestamp, const uint32_t& pa, const uint32_t& va, 
+	MemReq(const uint32_t& cpuid, const uint32_t& threadid, const uint64_t& timestamp, const uint32_t& pa, const uint32_t& va, 
 		const uint32_t& pc, const FlagsType& flag, const uint32_t& size, uint8_t* data_ptr):
-		cpuid(cpuid), pa(pa), va(va), threadId(threadId), timestamp(timestamp),
+		cpuid(cpuid), pa(pa), va(va), threadid(threadid), timestamp(timestamp),
 		pc(pc), flag(flag), payload(Payload{size, data_ptr})
 		{	
 		}
@@ -248,7 +248,7 @@ inline std::ostream& operator<<(std::ostream& os, const Flags<uint64_t>& p){
 }
 inline std::ostream& operator<<(std::ostream& os, const MemReq& p){
 	os << "MemReq: cpuid=" << p.cpuid 
-		<< " threadId=" << p.threadId 
+		<< " threadid=" << p.threadid 
 		<< " timestamp=" << p.timestamp 
 		<< " pa=0x" << HEX16(p.pa) 
 		<< " va=0x" << HEX16(p.va) 
@@ -425,17 +425,17 @@ public:
 	using flag_t = Flags<FlagsType>;
 	MemResp() = default;
 	uint32_t cpuid = 0; // cpu id
-    uint32_t threadId = 0; // thread id
+    uint32_t threadid = 0; // thread id
     uint64_t timestamp = 0; //timestamp
 	flag_t flag; // memory request type
 	Payload payload;
-	MemResp(const uint32_t cpuid, const uint32_t& threadId, const uint64_t& timestamp, const FlagsType& flag, const Payload& data):
-		cpuid(cpuid), threadId(threadId), timestamp(timestamp), flag(flag), payload(data)
+	MemResp(const uint32_t cpuid, const uint32_t& threadid, const uint64_t& timestamp, const FlagsType& flag, const Payload& data):
+		cpuid(cpuid), threadid(threadid), timestamp(timestamp), flag(flag), payload(data)
 		{}
-	MemResp(const uint32_t cpuid, const uint32_t& threadId, const uint64_t& timestamp, const FlagsType& flag, const uint32_t& size, uint8_t* data_ptr):
-		cpuid(cpuid), threadId(threadId), timestamp(timestamp), flag(flag), payload(Payload{size, data_ptr}){}
+	MemResp(const uint32_t cpuid, const uint32_t& threadid, const uint64_t& timestamp, const FlagsType& flag, const uint32_t& size, uint8_t* data_ptr):
+		cpuid(cpuid), threadid(threadid), timestamp(timestamp), flag(flag), payload(Payload{size, data_ptr}){}
     MemResp(const MemReq& req):
-        MemResp(req.cpuid, req.threadId, req.timestamp, req.flag.get(), req.payload)
+        MemResp(req.cpuid, req.threadid, req.timestamp, req.flag.get(), req.payload)
     {}
     auto isRead() const -> bool{return flag.isSet(READ);}
     auto isWrite() const -> bool{return flag.isSet(WRITE);}
@@ -444,7 +444,7 @@ public:
 
 inline std::ostream& operator<<(std::ostream& os, const MemResp& p){
 	os << "MemResp: cpuid=" << p.cpuid 
-		<< " threadId=" << p.threadId 
+		<< " threadid=" << p.threadid 
 		<< " timestamp=" << p.timestamp 
 		<< " flag=" << p.flag 
 		<< " data=" << p.payload 
@@ -461,29 +461,29 @@ public:
 	}; // enum : FlagsType
 	using flag_t = Flags<FlagsType>;
 	uint32_t cpuid = 0; // cpu id
-    uint32_t threadId = 0; // thread id
+    uint32_t threadid = 0; // thread id
     uint64_t timestamp = 0; //timestamp
 	flag_t flag; // memory request type
 	uint64_t va;
 	uint64_t pa;
 	Payload payload;
 	SnoopReq() = default;
-	SnoopReq(const uint32_t cpuid, const uint32_t& threadId, const uint64_t& timestamp, const uint64_t& pa, const uint64_t& va, 
+	SnoopReq(const uint32_t cpuid, const uint32_t& threadid, const uint64_t& timestamp, const uint64_t& pa, const uint64_t& va, 
 		const FlagsType& flag, const Payload& data):
-		cpuid(cpuid), pa(pa), va(va), threadId(threadId), timestamp(timestamp),
+		cpuid(cpuid), pa(pa), va(va), threadid(threadid), timestamp(timestamp),
 		flag(flag), payload(data)
 		{	
 		}
-	SnoopReq(const uint32_t cpuid, const uint32_t& threadId, const uint64_t& timestamp, const uint64_t& pa, const uint64_t& va, 
+	SnoopReq(const uint32_t cpuid, const uint32_t& threadid, const uint64_t& timestamp, const uint64_t& pa, const uint64_t& va, 
 		const FlagsType& flag, const uint32_t& size, uint8_t* data_ptr):
-		cpuid(cpuid), pa(pa), va(va), threadId(threadId), timestamp(timestamp),
+		cpuid(cpuid), pa(pa), va(va), threadid(threadid), timestamp(timestamp),
 		flag(flag), payload(Payload{size, data_ptr})
 		{	
 		}
 }; // class SnoopReq
 inline std::ostream& operator<<(std::ostream& os, const SnoopReq& p){
 	os << "SnoopReq: cpuid=" << p.cpuid 
-		<< " threadId=" << p.threadId 
+		<< " threadid=" << p.threadid 
 		<< " timestamp=" << p.timestamp 
 		<< " pa=0x" << HEX16(p.pa) 
 		<< " va=0x" << HEX16(p.va) 
@@ -501,21 +501,21 @@ public:
 	}; // enum : FlagsType
 	using flag_t = Flags<FlagsType>;
 	uint32_t cpuid = 0; // cpu id
-    uint32_t threadId = 0; // thread id
+    uint32_t threadid = 0; // thread id
     uint64_t timestamp = 0; //timestamp
 	flag_t flag; // memory request type
 	Payload payload;
 	SnoopResp() = default;
-	SnoopResp(const uint32_t cpuid, const uint32_t& threadId, const uint64_t& timestamp, const FlagsType& flag, const Payload& data):
-		cpuid(cpuid), threadId(threadId), timestamp(timestamp),flag(flag), payload(data)
+	SnoopResp(const uint32_t cpuid, const uint32_t& threadid, const uint64_t& timestamp, const FlagsType& flag, const Payload& data):
+		cpuid(cpuid), threadid(threadid), timestamp(timestamp),flag(flag), payload(data)
 		{	}
-	SnoopResp(const uint32_t cpuid, const uint32_t& threadId, const uint64_t& timestamp, const FlagsType& flag, const uint32_t& size, uint8_t* data_ptr):
-		cpuid(cpuid), threadId(threadId), timestamp(timestamp), flag(flag), payload(Payload{size, data_ptr})
+	SnoopResp(const uint32_t cpuid, const uint32_t& threadid, const uint64_t& timestamp, const FlagsType& flag, const uint32_t& size, uint8_t* data_ptr):
+		cpuid(cpuid), threadid(threadid), timestamp(timestamp), flag(flag), payload(Payload{size, data_ptr})
 		{	}
 }; // class SnoopResp
 inline std::ostream& operator<<(std::ostream& os, const SnoopResp& p){
 	os << "SnoopResp: cpuid=" << p.cpuid 
-		<< " threadId=" << p.threadId 
+		<< " threadid=" << p.threadid 
 		<< " timestamp=" << p.timestamp 
 		<< " flag=" << p.flag 
 		<< " data=" << p.payload 
