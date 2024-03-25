@@ -21,6 +21,7 @@ auto FakeMemory::sendMemResp(const MemResp& resp) -> void {
     assert(0); // Not implemented
 }
 auto FakeMemory::receiveMemReq(const MemReq& req) -> void {
+    debug_logger_ << "Received memory request: " << req << std::endl;
     sparta_assert(0 <= req.pa - m_base_addr && req.pa - m_base_addr+ req.payload.size < m_size, "Invalid memory access");
     if(req.isRead()){
         memcpy(req.payload.data, m_data.get() + (req.pa - m_base_addr), req.payload.size);

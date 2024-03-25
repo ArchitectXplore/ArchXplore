@@ -75,5 +75,5 @@ protected:
     auto m_tick() -> void;
 }; // class DRAMSim3
 } // namespace uncore
-} // namespace archXplore
+} // namespace archXplore 
 #endif // __DRAMSIM3_HPP__

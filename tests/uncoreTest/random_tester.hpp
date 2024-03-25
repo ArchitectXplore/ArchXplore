@@ -10,6 +10,7 @@
 
 #include <queue>
 #include <unordered_map>
+#include <random>
 namespace archXplore{
 namespace uncore{
 class RandomTesterParameterSet : public sparta::ParameterSet{
@@ -19,7 +20,7 @@ public:
     PARAMETER(uint64_t, base_addr, 0x0, "Base address of the memory region to test")
     PARAMETER(uint64_t, size, 0x1000000, "Size of the memory region to test")
     PARAMETER(uint32_t, line_size, 64, "Line size of the memory region to test")
-    PARAMETER(uint32_t, line_mask, 64, "Line mask of the memory region to test")
+    PARAMETER(uint32_t, line_mask, 64 - 1, "Line mask of the memory region to test")
     PARAMETER(uint32_t, cpuid, 0, "cpu id")
     PARAMETER(uint32_t, num_iters, 1000, "Number of iterations to test")
     PARAMETER(uint32_t, seed, 114514, "Seed for the random number generator")
@@ -67,7 +68,7 @@ protected:
     auto m_lowerReqCreditInCB(const uint32_t & credit) -> void;
     auto m_initCB() -> void;
     auto m_sendReqCB() -> void;
-    inline auto m_genRandReq() -> void;
+    inline auto m_genRandReq() -> MemReq;
 
 }; // class RandomTester
 } // namespace uncore

@@ -44,7 +44,7 @@ inline std::ostream& operator<<(std::ostream& os, const Payload& p){
 		sparta_assert(p.data!= nullptr, "Payload data should not be null");
 		os << "Payload: size=" << p.size << "data: 0x";
 		for(int i = p.size - 1; i >= 0; i--){
-			os << HEX2(p.data[i]);
+			os << HEX2((uint32_t) p.data[i]);
 		}
 		os << std::endl;
 	}

@@ -9,7 +9,7 @@ target_include_directories(SpartaInPythonTest PUBLIC .)
 
 target_include_directories(SpartaInPythonTest PUBLIC ${ArchXplore_INCLUDES})
 
-target_link_libraries(SpartaInPythonTest PRIVATE ${ArchXplore_LIBS})
+target_link_libraries(SpartaInPythonTest PRIVATE ${ArchXplore_LIBS} dramsim3 inih)
 
 add_custom_command(TARGET SpartaInPythonTest POST_BUILD
     COMMENT "[INFO] Install python stub into ${CMAKE_BINARY_DIR}/stubs !" 

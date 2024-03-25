@@ -69,6 +69,16 @@ namespace archXplore
                      {
                          return self.bind(that);
                      })
+                .def("isBound",
+                    [](Port &self)
+                    {
+                        return self.isBound();
+                    })
+                .def("getNumBoundPorts",
+                    [](Port &self){
+                        return self.getNumBoundPorts();
+                    },
+                    py::return_value_policy::reference)
                 .def("__lshift__",
                      [](Port &self, Port *that)
                      {
@@ -201,11 +211,11 @@ namespace archXplore
                     },
                     py::return_value_policy::reference)
                 // py::return_value_policy::reference_internal);
-                // .def("setClock",
-                //      [](TreeNode &self, const Clock *clk)
-                //      {
-                //          return self.setClock(clk);
-                //      })
+                .def("setClock",
+                     [](TreeNode &self, const Clock *clk)
+                     {
+                         return self.setClock(clk);
+                     })
                 // .def(
                 //     "asPortSet",
                 //     [](TreeNode &self)

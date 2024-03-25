@@ -12,7 +12,7 @@ public:
     Flags():_flag(0){}
     // copy constructor
     Flags(const T& val): _flag(val){};
-    const Flags<T>& operator = (T val){
+    const Flags<T>& operator = (const T& val){
         _flag = val;
         return *this;
     } 
@@ -54,7 +54,18 @@ public:
     bool operator !=(const T& val) const{
         return (_flag != val);
     }
-
+    Flags<T>& operator |=(const T& val){
+        _flag |= val;
+        return *this;
+    }
+    Flags<T>& operator &=(const T& val){
+        _flag &= val;
+        return *this;
+    }
+    Flags<T>& operator ^=(const T& val){
+        _flag ^= val;
+        return *this;
+    }
 
 };
 
